@@ -1,0 +1,24 @@
+The tool helps to create/config the VC Env.
+
+Func Supported:
+
+1 Create DataCenter (Name)
+2 Create VC Cluster with spec (Name, DRS, HA)
+3 Add hosts to the target VC Cluster
+4 Config host with spec (SSH, NTP, license)
+5 Create DvSwitch Network
+6 Add PortGroup to the DvSwitch with spec (Name, VLAN_ID, Nic_Selected)
+
+
+Install the tool:
+  1 Need pyVmomi installed:
+    -- pip install pyvmomi
+
+  2 Init Tool:
+    -- python setup.py install
+
+Run the tool:
+  -- Execute: vcconfig
+
+Update config data:
+  -- Update the /usr/local/data/config.ini file

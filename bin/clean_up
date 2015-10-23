@@ -1,0 +1,128 @@
+#!/usr/bin/python
+
+import logging
+import vmwareapi
+import ssl
+from optparse import OptionParser
+
+LOG = logging.getLogger(__name__)
+
+
+def clean_vms(vc, vm_keys_list):
+    # Clean up vms
+    target_vms = vc.get_vms_by_regex(vm_keys_list)
+    for vm in target_vms:
+        try:
+            if vm.get_state() == "poweredOn":
+                LOG.info('PowerOff VM ' + vm.name())
+                vm.poweroff()
+            LOG.info('Delete VM ' + vm.name())
+            vm.destroy()
+        except Exception as ex:
+            LOG.info('Failed to delete VM.' + ex.message)
+
+
+def clean_nets(vc, net_keys_list):
+    # Clean up port groups
+    target_nets = vc.get_nets_by_regex(net_keys_list)
+    for net in target_nets:
+        try:
+            LOG.info('Delete network ' + net.name())
+            net.destroy()
+        except Exception as ex:
+            LOG.info('Failed to delete network.' + ex.message)
+
+
+def clean_folders(vc, folder_keys_list):
+    # Clean up folders
+    target_folders = vc.get_folders_by_regex(folder_keys_list)
+    for folder in target_folders:
+        try:
+            LOG.info('Delete folder ' + folder.name())
+            folder.destroy()
+        except Exception as ex:
+            LOG.info('Failed to delete folder.' + ex.message)
+
+
+def main():
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+    except AttributeError:
+        # Legacy Python that doesn't verify HTTPS certificates by default
+        pass
+    else:
+        # Handle target environment that doesn't support HTTPS verification
+        ssl._create_default_https_context = _create_unverified_https_context
+
+    vm_keys_list = ['.*\s\(\w+-\w+-\w+-\w+-\w+\)']
+
+    net_keys_list = ['flat-\w+-\w+-\w+-\w+-\w+',
+                     'edge-\w+-\w+-\w+-\w+-\w+-\w+',
+                     'vxw-dvs-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+']
+
+    folder_keys_list = ['OMS-VMware-OpenStack-.*',
+                        'OpenStack']
+
+    clean_def_resource = True
+
+    vc_ip = None
+    vc_user = None
+    vc_pwd = None
+
+    parser = OptionParser(usage='usage: %prog [options] arguments')
+    parser.add_option("--vc-ip", dest="vc_ip",
+                      help="vCenter IP address")
+    parser.add_option("-u", "--username", dest="username",
+                      help="vCenter username")
+    parser.add_option("-p", "--password", dest="password",
+                      help="vCenter password")
+
+    parser.add_option("--vm-regx", dest="vm_regx",
+                      help="Regular expression for vm. Separated by ,")
+    parser.add_option("--net-regx", dest="net_regx",
+                      help="Regular expression for network. Separated by ,")
+    parser.add_option("--fd-regx", dest="fd_regx",
+                      help="Regular expression for folder. Separated by ,")
+
+    (options, args) = parser.parse_args()
+
+    if options.vc_ip:
+        vc_ip = options.vc_ip
+    if options.username:
+        vc_user = options.username
+    if options.password:
+        vc_pwd = options.password
+
+    if vc_ip is None:
+        parser.error('Failed to get VC IP. Input the IP with --vc-ip')
+    if vc_user is None:
+        parser.error('Failed to get VC User. Input the User with -u')
+    if vc_pwd is None:
+        parser.error('Failed to get VC Password. Input the Password with -p')
+
+    if options.vm_regx:
+        clean_def_resource = False
+        vm_keys_list = options.vm_regx.split(',')
+    if options.net_regx:
+        clean_def_resource = False
+        net_keys_list = options.net_regx.split(',')
+    if options.fd_regx:
+        clean_def_resource = False
+        folder_keys_list = options.fd_regx.split(',')
+
+    with vmwareapi.VirtualCenter(vc_ip, vc_user, vc_pwd) as vc:
+        if clean_def_resource:
+            clean_vms(vc, vm_keys_list)
+            clean_nets(vc, net_keys_list)
+            clean_folders(vc, folder_keys_list)
+        else:
+            if options.vm_regx:
+                clean_vms(vc, vm_keys_list)
+            if options.net_regx:
+                clean_nets(vc, net_keys_list)
+            if options.fd_regx:
+                clean_folders(vc, folder_keys_list)
+
+
+if __name__ == '__main__':
+    main()
