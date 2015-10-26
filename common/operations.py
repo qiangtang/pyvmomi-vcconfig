@@ -123,6 +123,21 @@ def create_dvs(vc, dc, cf):
                     [get_host_member_spec(host, nic_index) for host in hosts]
                 dvs_spec.configSpec = dvs_config
                 dvs = dc.create_dvs(dvs_spec)
+            else:
+                dvs_config_spec = vim.DistributedVirtualSwitch.ConfigSpec()
+                dvs_config = dvs.config()
+                for host_mem in dvs_config.host:
+                    host_name = host_mem.config.host.name
+                    for host in hosts:
+                        if host_name == host.host_system.name:
+                            hosts.remove(host)
+                if hosts:
+                    dvs_config_spec.configVersion = dvs_config.configVersion
+                    dvs_config_spec.host = [get_host_member_spec(
+                        host, nic_index) for host in hosts]
+                    dvs.reconfig_dvs(dvs_config_spec)
+                else:
+                    print 'All target hosts already in dvs {}'.format(dvs_name)
 
             pgs_pair = cf.get(section, 'pg_pair_list').split(',')
             for pg_pair in pgs_pair:

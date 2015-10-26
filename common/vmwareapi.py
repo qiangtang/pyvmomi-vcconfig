@@ -457,6 +457,9 @@ class DistributedVirtualSwitch(ManagedObject):
     def name(self):
         return self.dvs.name
 
+    def config(self):
+        return self.dvs.config
+
     def get_portgroup(self, pg_name):
         return self.get_obj(self.si, [vim.dvs.DistributedVirtualPortgroup], pg_name)
 
@@ -464,6 +467,12 @@ class DistributedVirtualSwitch(ManagedObject):
         pg_task = self.dvs.AddDVPortgroup_Task([spec])
         task.WaitForTask(task=pg_task, si=self.si)
         return pg_task.info.result
+
+    def reconfig_dvs(self, spec):
+        dvs_config_task = self.dvs.ReconfigureDvs_Task(spec)
+        task.WaitForTask(task=dvs_config_task, si=self.si)
+        return dvs_config_task.info.result
+
 
     @property
     def moid(self):
