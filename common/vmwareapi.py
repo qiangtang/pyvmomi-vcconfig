@@ -2,8 +2,6 @@
 
 import logging
 import re
-import sys
-
 import pyVmomi
 from pyVmomi import vim
 import task
@@ -358,6 +356,7 @@ class Host(ManagedObject):
     def add_license(self, license_key):
         license_asg_manager = self.si.RetrieveContent()\
             .licenseManager.licenseAssignmentManager
+        print 'Assign license to host {}.'.format(self.host_system.name)
         license_asg_manager.UpdateAssignedLicense(
             entity=self.host_system._moId, licenseKey=license_key)
 

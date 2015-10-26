@@ -22,6 +22,8 @@ def get_datacenter(vc, cf):
     dc = vc.get_datacenter(dc_name)
     if dc is None:
         dc = vc.create_datacenter(dc_name)
+    else:
+        print 'Datacenter {} already exist.'.format(dc_name)
     return dc
 
 
@@ -31,12 +33,12 @@ def add_hosts_to_cluster(vc, dc, cf):
     host_pwd = cf.get(HOST_SECTION, 'pwd')
     force_str = cf.get(HOST_SECTION, 'force')
 
-    hostConnectSpec = vim.host.ConnectSpec()
-    hostConnectSpec.userName = host_user
-    hostConnectSpec.password = host_pwd
-    hostConnectSpec.force = True
+    host_connect_spec = vim.host.ConnectSpec()
+    host_connect_spec.userName = host_user
+    host_connect_spec.password = host_pwd
+    host_connect_spec.force = True
     if 'enable' != force_str.lower():
-        hostConnectSpec.force = False
+        host_connect_spec.force = False
 
     sections = cf.sections()
     all_hosts = vc.get_hosts()
@@ -47,12 +49,13 @@ def add_hosts_to_cluster(vc, dc, cf):
         if section.startswith(CLUSTER_SECTION_PREFIX):
             # Get VC Cluster info
             cluster_name = cf.get(section, 'name')
-            drs_flag = cf.get(section, 'drs')
-            ha_flag = cf.get(section, 'ha')
+            drs_flag = cf.get(section, 'drs').lower()
+            ha_flag = cf.get(section, 'ha').lower()
 
             cluster = dc.get_cluster(cluster_name)
             if cluster is None:
                 cluster = dc.create_cluster(cluster_name)
+            print 'Cluster {} already exist'.format(cluster_name)
 
             if 'enable' == drs_flag:
                 cluster.enable_drs()
@@ -70,10 +73,15 @@ def add_hosts_to_cluster(vc, dc, cf):
             # Add hosts to the target cluster
             for host_name in target_host_list:
                 host_name = host_name.strip()
-                hostConnectSpec.hostName = host_name
+                host_connect_spec.hostName = host_name
                 # Only add non-exist hosts
                 if host_name not in exist_hosts:
-                    cluster.add_host(hostConnectSpec)
+                    print 'Add host {} to VC cluster {}.'\
+                        .format(host_name, cluster_name)
+                    cluster.add_host(host_connect_spec)
+                else:
+                    print 'Host {} already exist in current VC'\
+                        .format(host_name)
 
 
 def config_hosts(vc, cf):
@@ -123,7 +131,7 @@ def create_dvs(vc, dc, cf):
                 vlan_id = pg_pair_list[1]
                 # create non-existing portgroup
                 if dvs.get_portgroup(pg_name):
-                    print 'PortGroup {} already existing'.format(pg_name)
+                    print 'PortGroup {} already exist'.format(pg_name)
                 else:
                     dvs.add_portgroup(get_port_group_spec(pg_name, vlan_id))
 
