@@ -6,6 +6,7 @@ DC_SECTION = 'dc_info'
 CLUSTER_SECTION_PREFIX = 'cluster_info'
 HOST_SECTION = 'host_info'
 DVS_SECTION_PREFIX = 'dvs_info'
+NFS_PREFIX = 'nfs_info'
 
 
 def get_vcenter(cf):
@@ -113,7 +114,7 @@ def create_dvs(vc, dc, cf):
                 hosts = [vc.get_host_by_name(host_name.strip())
                          for host_name in target_hosts]
 
-            dvs = dc.get_dvs(dvs_name)
+            dvs = dc.get_dvs_by_name(dvs_name)
             if dvs is None:
                 dvs_spec = vim.DistributedVirtualSwitch.CreateSpec()
                 dvs_config =\
@@ -181,3 +182,21 @@ def get_port_group_spec(pg_name, vlan_id):
     port_config.vlan = vlan_spec
     spec.defaultPortConfig = port_config
     return spec
+
+
+def add_nfs_to_host(vc, cf):
+    sections = cf.sections()
+    for section in sections:
+        if section.startswith(NFS_PREFIX):
+            ds_name = cf.get(section, 'local_name')
+            if vc.get_datastore(ds_name):
+                print 'The datastore named {} already exist.'.format(ds_name)
+            else:
+                ds_spec = vim.host.NasVolume.Specification()
+                ds_spec.localPath = ds_name
+                ds_spec.remoteHost = cf.get(section, 'remote_host')
+                ds_spec.remotePath = cf.get(section, 'remote_path')
+                ds_spec.accessMode = "readWrite"
+                host_name = cf.get(section, 'target_host')
+                target_host = vc.get_host_by_name(host_name)
+                target_host.add_nfs_datastore(ds_spec)

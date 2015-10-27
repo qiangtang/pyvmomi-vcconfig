@@ -108,6 +108,8 @@ class VirtualCenter(ManagedObject):
         dcs = [dc for dc in invtvw.view if dc.name == name]
         if len(dcs) > 0:
             return Datacenter(self.si, dcs[0])
+        else:
+            return None
 
     @requires_connection
     def get_vm_by_name(self, name, type="vm"):
@@ -124,6 +126,8 @@ class VirtualCenter(ManagedObject):
         vms = [vm for vm in invtvw.view if vm.name == name]
         if len(vms) > 0:
             return VM(self.si, vms[0])
+        else:
+            return None
 
     @requires_connection
     def get_datastore(self, name=None):
@@ -137,7 +141,10 @@ class VirtualCenter(ManagedObject):
         else:
             ds = invtvw.view
 
-        return DataStore(self.si, ds[0])
+        if ds:
+            return DataStore(self.si, ds[0])
+        else:
+            return None
 
     @requires_connection
     def get_hosts(self):
@@ -155,11 +162,15 @@ class VirtualCenter(ManagedObject):
             container=self.get_root_folder(self.si),
             type=[vim.HostSystem],
             recursive=True)
+        host = None
         for h in invtvw.view:
             if h.name == name:
                 host = h
                 break
-        return Host(self.si, host)
+        if host:
+            return Host(self.si, host)
+        else:
+            return None
 
     @requires_connection
     def get_log_bundle(self):
@@ -193,8 +204,10 @@ class VirtualCenter(ManagedObject):
             if name in v.name:
                 vapp = v
                 break
-        if vapp is not None:
+        if vapp:
             return Vapp(self.si, vapp)
+        else:
+            return None
 
     @requires_connection
     def get_vms_by_regex(self, regex_list):
@@ -267,8 +280,10 @@ class Datacenter(ManagedObject):
         clusters = [c for c in invtvw.view if c.name == name]
         if len(clusters) > 0:
             return Cluster(self.si, clusters[0])
+        else:
+            return None
 
-    def get_dvs(self, name=None):
+    def get_dvs_by_name(self, name=None):
         vmgr = self.si.RetrieveContent().viewManager
         invtvw = vmgr.CreateContainerView(
             container=self.get_root_folder(self.si),
@@ -278,13 +293,15 @@ class Datacenter(ManagedObject):
             dvs = [dvs for dvs in invtvw.view if dvs.name == name]
         else:
             dvs = invtvw.view
-        return DistributedVirtualSwitch(self.si, dvs[0])
-
+        if dvs:
+            return DistributedVirtualSwitch(self.si, dvs[0])
+        else:
+            return None
 
     def create_dvs(self, spec):
         dvs_task = self.dc.networkFolder.CreateDVS_Task(spec)
         task.WaitForTask(task=dvs_task, si=self.si)
-        return self.get_dvs(spec.configSpec.name)
+        return self.get_dvs_by_name(spec.configSpec.name)
 
 
 class Cluster(ManagedObject):
@@ -359,6 +376,12 @@ class Host(ManagedObject):
         print 'Assign license to host {}.'.format(self.host_system.name)
         license_asg_manager.UpdateAssignedLicense(
             entity=self.host_system._moId, licenseKey=license_key)
+
+    def add_nfs_datastore(self, ds_spec):
+        print 'Add NFS {}:{} to host {}.'.format(
+            ds_spec.remoteHost, ds_spec.remotePath, self.host_system.name)
+        self.host_system.configManager.datastoreSystem\
+            .CreateNasDatastore(ds_spec)
 
 
 class VM(ManagedObject):

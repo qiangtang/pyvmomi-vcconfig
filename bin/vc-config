@@ -28,6 +28,7 @@ def main():
     operations.add_hosts_to_cluster(vc, dc, cf)
     operations.config_hosts(vc, cf)
     operations.create_dvs(vc, dc, cf)
+    operations.add_nfs_to_host(vc, cf)
 
 
 if __name__ == '__main__':
