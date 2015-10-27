@@ -199,4 +199,8 @@ def add_nfs_to_host(vc, cf):
                 ds_spec.accessMode = "readWrite"
                 host_name = cf.get(section, 'target_host')
                 target_host = vc.get_host_by_name(host_name)
-                target_host.add_nfs_datastore(ds_spec)
+                if target_host:
+                    target_host.add_nfs_datastore(ds_spec)
+                else:
+                    print 'Target host {} not exist in the current VC.'\
+                        .format(host_name)
