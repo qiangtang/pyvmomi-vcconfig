@@ -6,8 +6,9 @@ Func Supported:
 2 Create VC Cluster with spec (Name, DRS, HA)
 3 Add hosts to the target VC Cluster
 4 Config host with spec (SSH, NTP, license)
-5 Create DvSwitch Network
+5 Create DvSwitch Network (Create / Reconfig)
 6 Add PortGroup to the DvSwitch with spec (Name, VLAN_ID, Nic_Selected)
+7 Mount NFS to the target host.
 
 
 Install the tool:
