@@ -46,10 +46,10 @@ def main():
                      'Input vm_name with --vm')
     if dest_host is None:
         parser.error('Failed to get dest host.'
-                     'Input host_name with --dest_host')
+                     'Input host_name with --dest-host')
     if dest_datastore is None:
         parser.error('Failed to get dest datastore.'
-                     'Input datastore_name with --dest_datastore')
+                     'Input datastore_name with --dest-datastore')
 
     cf = ConfigParser.ConfigParser()
     cf.read(CONFIG_FILE_PATH)
