@@ -204,3 +204,19 @@ def add_nfs_to_host(vc, cf):
                 else:
                     print 'Target host {} not exist in the current VC.'\
                         .format(host_name)
+
+
+def vmotion(vc, vm_name, dest_host_name, dest_datastore_name):
+    vm = vc.get_vm_by_name(vm_name)
+    dest_host = vc.get_host_by_name(dest_host_name)
+    dest_datastore = vc.get_datastore(dest_datastore_name)
+    if vm is None:
+        print 'VM {} not exist on VC.'.format(vm_name)
+        return
+    if dest_host is None:
+        print 'Host {} not exist on VC.'.format(dest_host_name)
+        return
+    if dest_datastore is None:
+        print 'Datastore {} not exist on VC.'.format(dest_datastore_name)
+        return
+    vm.migrate_host_datastore(dest_host, dest_datastore)

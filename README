@@ -9,6 +9,7 @@ Func Supported:
 5 Create DvSwitch Network (Create / Reconfig)
 6 Add PortGroup to the DvSwitch with spec (Name, VLAN_ID, Nic_Selected)
 7 Mount NFS to the target host.
+8 VM vMotion to spec host/datastore.
 
 
 Install the tool:

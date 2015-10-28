@@ -454,6 +454,19 @@ class VM(ManagedObject):
         destroy_task = self.vm.Destroy()
         task.WaitForTask(task=destroy_task, si=self.si)
 
+    def migrate_host_datastore(self, dest_host, dest_datastore):
+        # Support change both host and datastore
+        vm_relocate_spec = vim.vm.RelocateSpec()
+        vm_relocate_spec.host = dest_host.host_system
+        vm_relocate_spec.pool = self.vm.resourcePool
+        vm_relocate_spec.datastore = dest_datastore.ds
+        print "Migrating {} to datastore {} on destination host {}."\
+            .format(self.vm.name,
+                    dest_datastore.ds.name,
+                    dest_host.host_system.name)
+        vmotion_task = self.vm.Relocate(spec=vm_relocate_spec)
+        task.WaitForTask(task=vmotion_task, si=self.si)
+
 
 class DataStore(ManagedObject):
     def __init__(self, si, ds):
