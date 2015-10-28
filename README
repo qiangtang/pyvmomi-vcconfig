@@ -24,3 +24,16 @@ Run the tool:
 
 Update config data:
   -- Update the /usr/local/data/config.ini file
+
+For clean_up:
+   1 Run by default: clean_up
+     --  This will clean resources as the regular expression defined in the main()
+   2 Run by options: clean_up --vm-regx <reg-vm> --net-regx <reg-net> --fd-regx <reg-folder>
+     --  This will clean as your regular defined or you can run each separately
+
+For vc-config:
+   Run by default: vc-config
+     --  This will config your vc as data defined in the config.ini file
+
+For vmotion:
+   Run as: vmotion --vm <vm_name> --dest-host <host_name> --dest-datastore <ds_name>

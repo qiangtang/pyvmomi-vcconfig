@@ -1,11 +1,13 @@
 #!/usr/bin/python
 
 import logging
+import ConfigParser
 import ssl
-from common import vmwareapi
 from optparse import OptionParser
+from common import operations
 
 LOG = logging.getLogger(__name__)
+CONFIG_FILE_PATH = '/usr/local/data/config.ini'
 
 
 def clean_vms(vc, vm_keys_list):
@@ -58,24 +60,14 @@ def main():
 
     net_keys_list = ['flat-\w+-\w+-\w+-\w+-\w+',
                      'edge-\w+-\w+-\w+-\w+-\w+-\w+',
-                     'vxw-dvs-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+']
+                     'vxw-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+']
 
-    folder_keys_list = ['OMS-VMware-OpenStack-.*',
-                        'OpenStack']
+    folder_keys_list = ['folder-.*',
+                        'folder2']
 
     clean_def_resource = True
 
-    vc_ip = None
-    vc_user = None
-    vc_pwd = None
-
     parser = OptionParser(usage='usage: %prog [options] arguments')
-    parser.add_option("--vc-ip", dest="vc_ip",
-                      help="vCenter IP address")
-    parser.add_option("-u", "--username", dest="username",
-                      help="vCenter username")
-    parser.add_option("-p", "--password", dest="password",
-                      help="vCenter password")
 
     parser.add_option("--vm-regx", dest="vm_regx",
                       help="Regular expression for vm. Separated by ,")
@@ -85,20 +77,6 @@ def main():
                       help="Regular expression for folder. Separated by ,")
 
     (options, args) = parser.parse_args()
-
-    if options.vc_ip:
-        vc_ip = options.vc_ip
-    if options.username:
-        vc_user = options.username
-    if options.password:
-        vc_pwd = options.password
-
-    if vc_ip is None:
-        parser.error('Failed to get VC IP. Input the IP with --vc-ip')
-    if vc_user is None:
-        parser.error('Failed to get VC User. Input the User with -u')
-    if vc_pwd is None:
-        parser.error('Failed to get VC Password. Input the Password with -p')
 
     if options.vm_regx:
         clean_def_resource = False
@@ -110,18 +88,21 @@ def main():
         clean_def_resource = False
         folder_keys_list = options.fd_regx.split(',')
 
-    with vmwareapi.VirtualCenter(vc_ip, vc_user, vc_pwd) as vc:
-        if clean_def_resource:
+    cf = ConfigParser.ConfigParser()
+    cf.read(CONFIG_FILE_PATH)
+
+    vc = operations.get_vcenter(cf)
+    if clean_def_resource:
+        clean_vms(vc, vm_keys_list)
+        clean_nets(vc, net_keys_list)
+        clean_folders(vc, folder_keys_list)
+    else:
+        if options.vm_regx:
             clean_vms(vc, vm_keys_list)
+        if options.net_regx:
             clean_nets(vc, net_keys_list)
+        if options.fd_regx:
             clean_folders(vc, folder_keys_list)
-        else:
-            if options.vm_regx:
-                clean_vms(vc, vm_keys_list)
-            if options.net_regx:
-                clean_nets(vc, net_keys_list)
-            if options.fd_regx:
-                clean_folders(vc, folder_keys_list)
 
 
 if __name__ == '__main__':
