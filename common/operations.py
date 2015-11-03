@@ -55,8 +55,8 @@ def add_hosts_to_cluster(vc, dc, cf):
 
             cluster = dc.get_cluster(cluster_name)
             if cluster is None:
+                print 'Create VC Cluster {}.'.format(cluster_name)
                 cluster = dc.create_cluster(cluster_name)
-            print 'Cluster {} already exist'.format(cluster_name)
 
             if 'enable' == drs_flag:
                 cluster.enable_drs()
@@ -72,17 +72,42 @@ def add_hosts_to_cluster(vc, dc, cf):
             target_host_list = target_hosts.split(',')
 
             # Add hosts to the target cluster
-            for host_name in target_host_list:
-                host_name = host_name.strip()
-                host_connect_spec.hostName = host_name
-                # Only add non-exist hosts
-                if host_name not in exist_hosts:
-                    print 'Add host {} to VC cluster {}.'\
-                        .format(host_name, cluster_name)
-                    cluster.add_host(host_connect_spec)
+            for host_name_str in target_host_list:
+                host_name_str = host_name_str.strip()
+                host_names = []
+                if '-' in host_name_str:
+                    # Host IP range
+                    host_names.extend(get_ip(host_name_str))
                 else:
-                    print 'Host {} already exist in current VC'\
-                        .format(host_name)
+                    # Single Host IP
+                    host_names.append(host_name_str)
+                for host_name in host_names:
+                    host_connect_spec.hostName = host_name
+                    # Only add non-exist hosts
+                    if host_name not in exist_hosts:
+                        print 'Add host {} to VC cluster {}.'\
+                            .format(host_name, cluster_name)
+                        cluster.add_host(host_connect_spec)
+                    else:
+                        print 'Host {} already exist in current VC'\
+                            .format(host_name)
+
+
+def ip2num(ip):
+    ip = [int(x) for x in ip.split('.')]
+    return ip[0] << 24 | ip[1] << 16 | ip[2] << 8 | ip[3]
+
+
+def num2ip(num):
+    return '%s.%s.%s.%s' % ((num & 0xff000000) >> 24,
+                            (num & 0x00ff0000) >> 16,
+                            (num & 0x0000ff00) >> 8,
+                            num & 0x000000ff )
+
+
+def get_ip(ip_range):
+    start, end = [ip2num(x) for x in ip_range.split('-')]
+    return [num2ip(num) for num in range(start, end+1) if num & 0xff]
 
 
 def config_hosts(vc, cf):
@@ -123,6 +148,7 @@ def create_dvs(vc, dc, cf):
                 dvs_config.host =\
                     [get_host_member_spec(host, nic_index) for host in hosts]
                 dvs_spec.configSpec = dvs_config
+                print 'Create DVS {}.'.format(dvs_name)
                 dvs = dc.create_dvs(dvs_spec)
             else:
                 dvs_config_spec = vim.DistributedVirtualSwitch.ConfigSpec()
@@ -147,8 +173,11 @@ def create_dvs(vc, dc, cf):
                 vlan_id = pg_pair_list[1]
                 # create non-existing portgroup
                 if dvs.get_portgroup(pg_name):
-                    print 'PortGroup {} already exist'.format(pg_name)
+                    print 'PortGroup {} already exist in DVS {}'\
+                        .format(pg_name, dvs_name)
                 else:
+                    print 'Add portgroup {} to DVS {}.'\
+                        .format(pg_name, dvs_name)
                     dvs.add_portgroup(get_port_group_spec(pg_name, vlan_id))
 
 
