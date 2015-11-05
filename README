@@ -22,7 +22,7 @@ Install the tool:
        copying data/config.ini-> <Config Data Path>  Such as /usr/data
 
 Run the tool:
-  -- Execute: vcconfig
+  -- Execute: vc-config
 
 Update config data:
   -- Update the <Config Data Path>/config.ini file
