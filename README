@@ -18,14 +18,12 @@ Install the tool:
 
   2 Init Tool:
     -- python setup.py install
-    -- Copy the config data path from installation info: 
-       copying data/config.ini-> <Config Data Path>  Such as /usr/data
 
 Run the tool:
   -- Execute: vc-config
 
 Update config data:
-  -- Update the <Config Data Path>/config.ini file
+  -- Update the /usr/data/config.ini file
 
 For clean_up:
    1 Run by default: clean_up
