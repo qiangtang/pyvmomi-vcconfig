@@ -106,10 +106,7 @@ class VirtualCenter(ManagedObject):
             type=[vim.Datacenter],
             recursive=True)
         dcs = [dc for dc in invtvw.view if dc.name == name]
-        if len(dcs) > 0:
-            return Datacenter(self.si, dcs[0])
-        else:
-            return None
+        return Datacenter(self.si, dcs[0]) if len(dcs) > 0 else None
 
     @requires_connection
     def get_vm_by_name(self, name, type="vm"):
@@ -124,10 +121,7 @@ class VirtualCenter(ManagedObject):
             type=[vim.VirtualMachine],
             recursive=True)
         vms = [vm for vm in invtvw.view if vm.name == name]
-        if len(vms) > 0:
-            return VM(self.si, vms[0])
-        else:
-            return None
+        return VM(self.si, vms[0]) if len(vms) > 0 else None
 
     @requires_connection
     def get_datastore(self, name=None):
@@ -141,10 +135,7 @@ class VirtualCenter(ManagedObject):
         else:
             ds = invtvw.view
 
-        if ds:
-            return DataStore(self.si, ds[0])
-        else:
-            return None
+        return DataStore(self.si, ds[0]) if ds else None
 
     @requires_connection
     def get_hosts(self):
@@ -167,10 +158,7 @@ class VirtualCenter(ManagedObject):
             if h.name == name:
                 host = h
                 break
-        if host:
-            return Host(self.si, host)
-        else:
-            return None
+        return Host(self.si, host) if host else None
 
     @requires_connection
     def get_log_bundle(self):
@@ -204,10 +192,7 @@ class VirtualCenter(ManagedObject):
             if name in v.name:
                 vapp = v
                 break
-        if vapp:
-            return Vapp(self.si, vapp)
-        else:
-            return None
+        return Vapp(self.si, vapp) if vapp else None
 
     @requires_connection
     def get_vms_by_regex(self, regex_list):
@@ -278,10 +263,7 @@ class Datacenter(ManagedObject):
             type=[vim.ClusterComputeResource],
             recursive=True)
         clusters = [c for c in invtvw.view if c.name == name]
-        if len(clusters) > 0:
-            return Cluster(self.si, clusters[0])
-        else:
-            return None
+        return Cluster(self.si, clusters[0]) if len(clusters) > 0 else None
 
     def get_dvs_by_name(self, name=None):
         vmgr = self.si.RetrieveContent().viewManager
@@ -293,10 +275,7 @@ class Datacenter(ManagedObject):
             dvs = [dvs for dvs in invtvw.view if dvs.name == name]
         else:
             dvs = invtvw.view
-        if dvs:
-            return DistributedVirtualSwitch(self.si, dvs[0])
-        else:
-            return None
+        return DistributedVirtualSwitch(self.si, dvs[0]) if dvs else None
 
     def create_dvs(self, spec):
         dvs_task = self.dc.networkFolder.CreateDVS_Task(spec)
@@ -508,7 +487,6 @@ class DistributedVirtualSwitch(ManagedObject):
         dvs_config_task = self.dvs.ReconfigureDvs_Task(spec)
         task.WaitForTask(task=dvs_config_task, si=self.si)
         return dvs_config_task.info.result
-
 
     @property
     def moid(self):

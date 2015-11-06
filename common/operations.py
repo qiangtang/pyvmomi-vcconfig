@@ -1,3 +1,5 @@
+import commands
+import re
 import vmwareapi
 from pyVmomi import vim
 
@@ -75,13 +77,15 @@ def add_hosts_to_cluster(vc, dc, cf):
             for host_name_str in target_host_list:
                 host_name_str = host_name_str.strip()
                 host_names = []
-                if '-' in host_name_str:
+                if is_ip_range(host_name_str):
                     # Host IP range
                     host_names.extend(get_ip(host_name_str))
                 else:
                     # Single Host IP
                     host_names.append(host_name_str)
                 for host_name in host_names:
+                    host_connect_spec.sslThumbprint =\
+                        get_fingerprint(host_name)
                     host_connect_spec.hostName = host_name
                     # Only add non-exist hosts
                     if host_name not in exist_hosts:
@@ -91,6 +95,19 @@ def add_hosts_to_cluster(vc, dc, cf):
                     else:
                         print 'Host {} already exist in current VC'\
                             .format(host_name)
+
+
+def get_fingerprint(host_name):
+    cmd = "echo -n | openssl s_client -connect {}:443 2>/dev/null " \
+          "| openssl x509 -noout -fingerprint -sha1"
+    result = commands.getoutput(cmd.format(host_name)).split('=')
+    return result[1] if result else None
+
+
+def is_ip_range(range_str):
+    reg_iprange = '^\d+\.\d+\.\d+\.\d+-\d+\.\d+\.\d+\.\d+$'
+    result = re.match(reg_iprange, range_str)
+    return True if result else False
 
 
 def ip2num(ip):
@@ -135,9 +152,15 @@ def create_dvs(vc, dc, cf):
             target_hosts_str = cf.get(section, 'host_list')
             nic_index = int(cf.get(section, 'nic_item'))
             if '' != target_hosts_str:
-                target_hosts = target_hosts_str.split(',')
+                target_hosts_list = target_hosts_str.split(',')
+                host_names = []
+                for host_name_str in target_hosts_list:
+                    if is_ip_range(host_name_str):
+                        host_names.extend(get_ip(host_name_str))
+                    else:
+                        host_names.append(host_name_str)
                 hosts = [vc.get_host_by_name(host_name.strip())
-                         for host_name in target_hosts]
+                         for host_name in host_names]
 
             dvs = dc.get_dvs_by_name(dvs_name)
             if dvs is None:
