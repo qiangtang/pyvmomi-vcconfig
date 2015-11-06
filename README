@@ -13,8 +13,9 @@ Func Supported:
 
 
 Install the tool:
-  1 Need pyVmomi installed:
+  1 Need pyVmomi and openssl installed:
     -- pip install pyvmomi
+    -- pip install openssl
 
   2 Init Tool:
     -- python setup.py install
