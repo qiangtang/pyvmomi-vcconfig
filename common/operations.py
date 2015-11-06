@@ -79,7 +79,7 @@ def add_hosts_to_cluster(vc, dc, cf):
                 host_names = []
                 if is_ip_range(host_name_str):
                     # Host IP range
-                    host_names.extend(get_ip(host_name_str))
+                    host_names.extend(get_ips(host_name_str))
                 else:
                     # Single Host IP
                     host_names.append(host_name_str)
@@ -122,7 +122,7 @@ def num2ip(num):
                             num & 0x000000ff )
 
 
-def get_ip(ip_range):
+def get_ips(ip_range):
     start, end = [ip2num(x) for x in ip_range.split('-')]
     return [num2ip(num) for num in range(start, end+1) if num & 0xff]
 
@@ -156,7 +156,7 @@ def create_dvs(vc, dc, cf):
                 host_names = []
                 for host_name_str in target_hosts_list:
                     if is_ip_range(host_name_str):
-                        host_names.extend(get_ip(host_name_str))
+                        host_names.extend(get_ips(host_name_str))
                     else:
                         host_names.append(host_name_str)
                 hosts = [vc.get_host_by_name(host_name.strip())
@@ -249,13 +249,21 @@ def add_nfs_to_host(vc, cf):
                 ds_spec.remoteHost = cf.get(section, 'remote_host')
                 ds_spec.remotePath = cf.get(section, 'remote_path')
                 ds_spec.accessMode = "readWrite"
-                host_name = cf.get(section, 'target_host')
-                target_host = vc.get_host_by_name(host_name)
-                if target_host:
-                    target_host.add_nfs_datastore(ds_spec)
-                else:
-                    print 'Target host {} not exist in the current VC.'\
-                        .format(host_name)
+                host_name_list = cf.get(section, 'target_host').split(',')
+                hosts = []
+                for host_name_str in host_name_list:
+                    host_name = host_name_str.strip()
+                    if is_ip_range(host_name):
+                        hosts.extend(get_ips(host_name))
+                    else:
+                        hosts.append(host_name)
+                for host_name in hosts:
+                    target_host = vc.get_host_by_name(host_name)
+                    if target_host:
+                        target_host.add_nfs_datastore(ds_spec)
+                    else:
+                        print 'Target host {} not exist in the current VC.'\
+                            .format(host_name)
 
 
 def vmotion(vc, vm_name, dest_host_name, dest_datastore_name):
