@@ -60,41 +60,25 @@ def add_hosts_to_cluster(vc, dc, cf):
                 print 'Create VC Cluster {}.'.format(cluster_name)
                 cluster = dc.create_cluster(cluster_name)
 
-            if 'enable' == drs_flag:
-                cluster.enable_drs()
-            else:
-                cluster.enable_drs(False)
+            cluster.enable_drs() if 'enable' == drs_flag \
+                else cluster.enable_drs(False)
+            cluster.enable_ha() if 'enable' == ha_flag \
+                else cluster.enable_ha(False)
 
-            if 'enable' == ha_flag:
-                cluster.enable_ha()
-            else:
-                cluster.enable_ha(False)
-
-            target_hosts = cf.get(section, 'host_add_list')
-            target_host_list = target_hosts.split(',')
+            host_names = get_host_list(cf.get(section, 'host_add_list'))
 
             # Add hosts to the target cluster
-            for host_name_str in target_host_list:
-                host_name_str = host_name_str.strip()
-                host_names = []
-                if is_ip_range(host_name_str):
-                    # Host IP range
-                    host_names.extend(get_ips(host_name_str))
+            for host_name in host_names:
+                host_connect_spec.sslThumbprint = get_fingerprint(host_name)
+                host_connect_spec.hostName = host_name
+                # Only add non-exist hosts
+                if host_name not in exist_hosts:
+                    print 'Add host {} to VC cluster {}.'\
+                        .format(host_name, cluster_name)
+                    cluster.add_host(host_connect_spec)
                 else:
-                    # Single Host IP
-                    host_names.append(host_name_str)
-                for host_name in host_names:
-                    host_connect_spec.sslThumbprint =\
-                        get_fingerprint(host_name)
-                    host_connect_spec.hostName = host_name
-                    # Only add non-exist hosts
-                    if host_name not in exist_hosts:
-                        print 'Add host {} to VC cluster {}.'\
-                            .format(host_name, cluster_name)
-                        cluster.add_host(host_connect_spec)
-                    else:
-                        print 'Host {} already exist in current VC'\
-                            .format(host_name)
+                    print 'Host {} already exist in current VC'\
+                        .format(host_name)
 
 
 def get_fingerprint(host_name):
@@ -127,6 +111,20 @@ def get_ips(ip_range):
     return [num2ip(num) for num in range(start, end+1) if num & 0xff]
 
 
+def get_host_list(host_names):
+    target_host_list = host_names.split(',')
+    host_names = []
+    for host_name_str in target_host_list:
+        host_name_str = host_name_str.strip()
+        if is_ip_range(host_name_str):
+            # Host IP range
+            host_names.extend(get_ips(host_name_str))
+        else:
+            # Single Host IP
+            host_names.append(host_name_str)
+    return host_names
+
+
 def config_hosts(vc, cf):
     # Get Host config info
     host_ntp = cf.get(HOST_SECTION, 'ntp')
@@ -152,13 +150,7 @@ def create_dvs(vc, dc, cf):
             target_hosts_str = cf.get(section, 'host_list')
             nic_index = int(cf.get(section, 'nic_item'))
             if '' != target_hosts_str:
-                target_hosts_list = target_hosts_str.split(',')
-                host_names = []
-                for host_name_str in target_hosts_list:
-                    if is_ip_range(host_name_str):
-                        host_names.extend(get_ips(host_name_str))
-                    else:
-                        host_names.append(host_name_str)
+                host_names = get_host_list(target_hosts_str)
                 hosts = [vc.get_host_by_name(host_name.strip())
                          for host_name in host_names]
 
@@ -249,14 +241,7 @@ def add_nfs_to_host(vc, cf):
                 ds_spec.remoteHost = cf.get(section, 'remote_host')
                 ds_spec.remotePath = cf.get(section, 'remote_path')
                 ds_spec.accessMode = "readWrite"
-                host_name_list = cf.get(section, 'target_host').split(',')
-                hosts = []
-                for host_name_str in host_name_list:
-                    host_name = host_name_str.strip()
-                    if is_ip_range(host_name):
-                        hosts.extend(get_ips(host_name))
-                    else:
-                        hosts.append(host_name)
+                hosts = get_host_list(cf.get(section, 'target_host'))
                 for host_name in hosts:
                     target_host = vc.get_host_by_name(host_name)
                     if target_host:
