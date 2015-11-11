@@ -7,7 +7,7 @@ from optparse import OptionParser
 from common import operations
 
 LOG = logging.getLogger(__name__)
-CONFIG_FILE_PATH = '/usr/data/config.ini'
+CONFIG_FILE_PATH = '/usr/local/data/config.ini'
 
 
 def clean_vms(vc, vm_keys_list):
