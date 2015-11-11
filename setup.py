@@ -7,5 +7,5 @@ setup(
              'bin/clean_up',
              'bin/vmotion'],
     packages=['common'],
-    data_files=[('/usr/data', ['data/config.ini'])]
+    data_files=[('/usr/local/data', ['data/config.ini'])]
 )

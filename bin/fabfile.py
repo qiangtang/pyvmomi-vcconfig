@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
+import ssl
 
-def main():
+
+def init_ssl():
     try:
         _create_unverified_https_context = ssl._create_unverified_context
     except AttributeError:
@@ -10,6 +12,13 @@ def main():
     else:
         # Handle target environment that doesn't support HTTPS verification
         ssl._create_default_https_context = _create_unverified_https_context
+
+
+def init_vc():
+
+
+def main():
+
 
 
 
