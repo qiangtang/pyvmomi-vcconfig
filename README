@@ -22,7 +22,9 @@ Installation:
 
 
 For vcops: Command line tool for vc config
-   Run as the help guide: vcops -h
+   Run as the help: vcops -h
+      -- Init vc account info: vcops init-vc --ip <vc_ip> -u <vc_user> -p <vc_pwd>
+      -- Run other funcs as help
 
 
 For vc-config: One step tool for vc config
