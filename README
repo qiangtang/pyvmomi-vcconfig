@@ -12,7 +12,7 @@ Func Supported:
 8 VM vMotion to spec host/datastore.
 
 
-Install the tool:
+Installation:
   1 Need pyVmomi and openssl installed:
     -- pip install pyvmomi
     -- pip install openssl
@@ -20,21 +20,19 @@ Install the tool:
   2 Init Tool:
     -- python setup.py install
 
-Run the tool:
-  -- Execute: vc-config
 
-Update config data:
-  -- Update the /usr/data/config.ini file
+For vcops: Command line tool for vc config
+   Run as the help guide: vcops -h
+
+
+For vc-config: One step tool for vc config
+   Run by default: vc-config
+     --  Update the /usr/local/data/config.ini file
+     --  This will config your vc as data defined in the config.ini file
+
 
 For clean_up:
    1 Run by default: clean_up
      --  This will clean resources as the regular expression defined in the main()
    2 Run by options: clean_up --vm-regx <reg-vm> --net-regx <reg-net> --fd-regx <reg-folder>
      --  This will clean as your regular defined or you can run each separately
-
-For vc-config:
-   Run by default: vc-config
-     --  This will config your vc as data defined in the config.ini file
-
-For vmotion:
-   Run as: vmotion --vm <vm_name> --dest-host <host_name> --dest-datastore <ds_name>

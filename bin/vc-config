@@ -47,8 +47,7 @@ def main():
         if section.startswith(CLUSTER_SECTION_PREFIX):
             cluster_name = cf.get(section, 'name')
             services = cf.get(section, 'services')
-            host_names = operations.get_host_list(
-                cf.get(section, 'host_add_list'))
+            host_names = cf.get(section, 'host_add_list')
 
             cluster = operations.create_cluster(dc, cluster_name, services)
             operations.add_hosts_to_cluster(vc, cluster, host_user, host_pwd,
@@ -67,8 +66,8 @@ def main():
             target_hosts_str = cf.get(section, 'host_list')
             nic_index = int(cf.get(section, 'nic_item'))
             pgs_pair = cf.get(section, 'pg_pair_list').split(',')
-            operations.create_dvs(vc, dc, dvs_name, target_hosts_str,
-                                  nic_index, pgs_pair)
+            operations.create_dvs(vc, dc, dvs_name, nic_index,
+                                  target_hosts_str, pgs_pair)
 
     # Mount nfs to hosts
     for section in sections:

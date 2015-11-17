@@ -18,24 +18,25 @@ def get_datacenter(vc, dc_name):
     return dc
 
 
-def create_cluster(dc, cluster_name, services_str):
+def create_cluster(dc, cluster_name, services_str=None):
     cluster = dc.get_cluster(cluster_name)
     if cluster is None:
         print 'Create VC Cluster {}.'.format(cluster_name)
         cluster = dc.create_cluster(cluster_name)
-    services = services_str.strip().lower().split(',')
-    for service in services:
-        service = service.strip()
-        if service == 'drs':
-            cluster.enable_drs()
-            continue
-        if service == 'ha':
-            cluster.enable_ha()
-            continue
+    if services_str:
+        services = services_str.strip().lower().split(',')
+        for service in services:
+            service = service.strip()
+            if service == 'drs':
+                cluster.enable_drs()
+                continue
+            if service == 'ha':
+                cluster.enable_ha()
+                continue
     return cluster
 
 
-def add_hosts_to_cluster(vc, cluster, host_user, host_pwd, host_names):
+def add_hosts_to_cluster(vc, cluster, host_user, host_pwd, host_names_str):
     # Get host accout info
     host_connect_spec = vim.host.ConnectSpec()
     host_connect_spec.userName = host_user
@@ -45,7 +46,9 @@ def add_hosts_to_cluster(vc, cluster, host_user, host_pwd, host_names):
     exist_hosts = []
     for host in all_hosts:
         exist_hosts.append(host.host_system.name)
+    host_names = get_host_list(host_names_str)
     for host_name in host_names:
+        host_name = host_name.strip()
         host_connect_spec.sslThumbprint = get_fingerprint(host_name)
         host_connect_spec.hostName = host_name
         # Only add non-exist hosts
@@ -117,10 +120,10 @@ def config_hosts(vc, services_str, ntp=None, licensekey=None):
             host.add_license(license_key=licensekey)
 
 
-def create_dvs(vc, dc, dvs_name, target_hosts_str='', nic_index=1,
+def create_dvs(vc, dc, dvs_name, nic_index=1, target_hosts_str=None,
                pgs_pair=None):
     hosts = vc.get_hosts()
-    if '' != target_hosts_str:
+    if target_hosts_str and '' != target_hosts_str:
         host_names = get_host_list(target_hosts_str)
         hosts = [vc.get_host_by_name(host_name.strip())
                  for host_name in host_names]
@@ -153,8 +156,8 @@ def create_dvs(vc, dc, dvs_name, target_hosts_str='', nic_index=1,
 
     for pg_pair in pgs_pair:
         pg_pair_list = pg_pair.split(':')
-        pg_name = pg_pair_list[0]
-        vlan_id = pg_pair_list[1]
+        pg_name = pg_pair_list[0].strip()
+        vlan_id = pg_pair_list[1].strip()
         # create non-existing portgroup
         if dvs.get_portgroup(pg_name):
             print 'PortGroup {} already exist in DVS {}'\
