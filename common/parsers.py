@@ -127,8 +127,8 @@ def add_host(args):
 
 def add_host_parser(subparsers):
     parser = subparsers.add_parser(
-        'add-cluster',
-        help='Create VC Clusters if not exist.'
+        'add-host',
+        help='Add hosts to the target cluster.'
     )
     parser.add_argument(
         '--dc',
