@@ -53,8 +53,7 @@ def assign_role_parser(subparsers):
         '--account',
         action='store',
         required=True,
-        help='[Optional] Account the role to be assigned. '
-             'root account by default',
+        help='Account the role to be assigned.',
         dest='account'
     )
     parser.add_argument(
@@ -62,8 +61,7 @@ def assign_role_parser(subparsers):
         '--role',
         action='store',
         required=True,
-        help='[Optional] vSphere.local user password of target VC. '
-             'Admin role by default',
+        help='Role to be assigned to the account.',
         choices=['Admin', 'ReadOnly', 'View', 'NoAccess', 'Anonymous'],
         dest='role'
     )
