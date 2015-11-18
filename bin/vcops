@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser(description='CLI for VC Operations.')
     subparsers = parser.add_subparsers(help='sub-command help',
                                        dest='sub_cmd')
+    parsers.assign_role_parser(subparsers)
     parsers.init_vc_parser(subparsers)
     parsers.add_dc_parser(subparsers)
     parsers.add_cluster_parser(subparsers)

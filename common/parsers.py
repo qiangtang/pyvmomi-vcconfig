@@ -14,6 +14,59 @@ def _get_vc():
     return operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
 
+def assign_role(args):
+    vc = operations.get_vcenter(args.vc_ip, args.vc_user, args.vc_pwd)
+    vc.assign_role(args.account, args.role)
+
+
+def assign_role_parser(subparsers):
+    parser = subparsers.add_parser(
+        'assign-role',
+        help='Assign global administrator role to the root account.'
+    )
+    parser.add_argument(
+        '--ip',
+        action='store',
+        required=True,
+        help='IP of target VC.',
+        dest='vc_ip'
+    )
+    parser.add_argument(
+        '-u',
+        '--user',
+        action='store',
+        required=True,
+        help='vSphere.local user of target VC.',
+        dest='vc_user'
+    )
+    parser.add_argument(
+        '-p',
+        '--password',
+        action='store',
+        required=True,
+        help='vSphere.local user password of target VC.',
+        dest='vc_pwd'
+    )
+    parser.add_argument(
+        '--account',
+        action='store',
+        help='[Optional] Account the role to be assigned. '
+             'root account by default',
+        default='root',
+        dest='account'
+    )
+    parser.add_argument(
+        '--role',
+        action='store',
+        help='[Optional] vSphere.local user password of target VC. '
+             'Admin role by default',
+        default='Admin',
+        choices=['Admin', 'ReadOnly', 'View', 'NoAccess', 'Anonymous'],
+        dest='role'
+    )
+    parser.set_defaults(func=assign_role)
+
+
 def init_vc(args):
     cf = ConfigParser.ConfigParser()
     cf.read(CONFIG_FILE_PATH)
