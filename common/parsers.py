@@ -22,7 +22,7 @@ def assign_role(args):
 def assign_role_parser(subparsers):
     parser = subparsers.add_parser(
         'assign-role',
-        help='Assign global administrator role to the root account.'
+        help='Assign role to the target account.'
     )
     parser.add_argument(
         '-i',
