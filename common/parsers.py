@@ -25,6 +25,7 @@ def assign_role_parser(subparsers):
         help='Assign global administrator role to the root account.'
     )
     parser.add_argument(
+        '-i',
         '--ip',
         action='store',
         required=True,
@@ -48,19 +49,21 @@ def assign_role_parser(subparsers):
         dest='vc_pwd'
     )
     parser.add_argument(
+        '-a',
         '--account',
         action='store',
+        required=True,
         help='[Optional] Account the role to be assigned. '
              'root account by default',
-        default='root',
         dest='account'
     )
     parser.add_argument(
+        '-r',
         '--role',
         action='store',
+        required=True,
         help='[Optional] vSphere.local user password of target VC. '
              'Admin role by default',
-        default='Admin',
         choices=['Admin', 'ReadOnly', 'View', 'NoAccess', 'Anonymous'],
         dest='role'
     )
@@ -84,6 +87,7 @@ def init_vc_parser(subparsers):
         help='Init vc account info with vc ip, user name and password.'
     )
     parser.add_argument(
+        '-i',
         '--ip',
         action='store',
         required=True,
