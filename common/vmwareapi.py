@@ -341,6 +341,17 @@ class Cluster(ManagedObject):
         return self.cluster._moId
 
 
+# Firewall rule on ESXi
+# cmmds: Virtual SAN Clustering Services
+RULES = ['httpClient', 'syslog', 'nfsClient', 'ntpClient',
+         'sshServer', 'sshClient', 'faultTolerance', 'vMotion',
+         'vsanvp', 'rabbitmqproxy', 'dhcp', 'dns', 'cmmds',
+         'activeDirectoryAll', 'webAccess']
+
+# Services on ESXi
+SERVICES = ['TSM-SSH', 'ntpd', 'snmpd']
+
+
 class Host(ManagedObject):
 
     def __init__(self, si, host_system):
@@ -381,6 +392,48 @@ class Host(ManagedObject):
             ds_spec.remoteHost, ds_spec.remotePath, self.host_system.name)
         self.host_system.configManager.datastoreSystem\
             .CreateNasDatastore(ds_spec)
+
+    def config_services(self, service_names, action='start'):
+        action_list = ['start', 'stop']
+        action = action.lower()
+        if action not in action_list:
+            print 'Action {} not support yet.'.format(action)
+            return
+        service_list = service_names.strip().split(',')
+        service_manager = self.host_system.configManager.serviceSystem
+        for service in service_list:
+            service = service.strip()
+            if service in SERVICES:
+                if action == 'start':
+                    print "Starting {} on {}.".format(service, self.host_system.name)
+                    service_manager.StartService(id=service)
+                elif action == 'stop':
+                    print "Stopping {} on {}.".format(service, self.host_system.name)
+                    service_manager.StopService(id=service)
+            else:
+                print "Not support config service {} on {} yet."\
+                    .format(service, self.host_system.name)
+
+    def config_firewall(self, rule_names, action='enable'):
+        action_list = ['enable', 'disable']
+        action = action.lower()
+        if action not in action_list:
+            print 'Action {} not support yet.'.format(action)
+            return
+        rule_list = rule_names.strip().split(',')
+        fw_manager = self.host_system.configManager.firewallSystem
+        for rule in rule_list:
+            rule = rule.strip()
+            if rule in RULES:
+                if action == 'enable':
+                    print "Enable rule {} on {}.".format(rule, self.host_system.name)
+                    fw_manager.EnableRuleset(id=rule)
+                elif action == 'disable':
+                    print "Disable rule {} on {}.".format(rule, self.host_system.name)
+                    fw_manager.DisableRuleset(id=rule)
+            else:
+                print "Not support config rule {} on {} yet."\
+                    .format(rule, self.host_system.name)
 
 
 class VM(ManagedObject):

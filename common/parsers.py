@@ -346,8 +346,9 @@ def add_dvs_parser(subparsers):
     parser.add_argument(
         '--host',
         action='store',
-        help='[Optional] Hosts added to the dvs. Ignore this if all hosts to '
-             'be added. Separated by comma.',
+        help='[Optional] Hosts added to the dvs. Support single ip/fqdn or '
+             'ip-range. Ignore this if all hosts to be added. '
+             'Separated by comma.',
         default=None,
         dest='target_hosts'
     )
@@ -397,3 +398,77 @@ def vmotion_parser(subparsers):
         dest='dest_datastore'
     )
     parser.set_defaults(func=migrate)
+
+
+def config_service(args):
+    vc = _get_vc()
+    operations.cfg_esxi_service(vc, args.hosts, args.service, args.action)
+
+
+def config_service_parser(subparsers):
+    parser = subparsers.add_parser(
+        'cfg-service',
+        help='Start/stop service on target host.'
+    )
+    parser.add_argument(
+        '--host',
+        action='store',
+        required=True,
+        help='Target host list. Support single ip/fqdn or ip-range. '
+             'Separated by comma',
+        dest='hosts'
+    )
+    parser.add_argument(
+        '--action',
+        action='store',
+        required=True,
+        help='Action for the service. start/stop',
+        choices=['start', 'stop'],
+        dest='action'
+    )
+    parser.add_argument(
+        '--service',
+        action='store',
+        required=True,
+        help='Service to be config',
+        choices=operations.get_esxi_services(),
+        dest='service'
+    )
+    parser.set_defaults(func=config_service)
+
+
+def config_rule(args):
+    vc = _get_vc()
+    operations.cfg_esxi_fw_rule(vc, args.hosts, args.rule, args.action)
+
+
+def config_rule_parser(subparsers):
+    parser = subparsers.add_parser(
+        'cfg-rule',
+        help='Enable/disable firewall rule on target host.'
+    )
+    parser.add_argument(
+        '--host',
+        action='store',
+        required=True,
+        help='Target host list. Support single ip/fqdn or ip-range. '
+             'Separated by comma',
+        dest='hosts'
+    )
+    parser.add_argument(
+        '--action',
+        action='store',
+        required=True,
+        help='Action for the rule. enable/disable',
+        choices=['enable', 'disable'],
+        dest='action'
+    )
+    parser.add_argument(
+        '--rule',
+        action='store',
+        required=True,
+        help='Rule to be config',
+        choices=operations.get_esxi_rules(),
+        dest='rule'
+    )
+    parser.set_defaults(func=config_rule)

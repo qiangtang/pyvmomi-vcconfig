@@ -31,6 +31,8 @@ def main():
     parsers.add_nfs_parser(subparsers)
     parsers.add_dvs_parser(subparsers)
     parsers.vmotion_parser(subparsers)
+    parsers.config_service_parser(subparsers)
+    parsers.config_rule_parser(subparsers)
 
     args = parser.parse_args()
     args.func(args)

@@ -232,3 +232,31 @@ def vmotion(vc, vm_name, dest_host_name, dest_datastore_name):
         print 'Datastore {} not exist on VC.'.format(dest_datastore_name)
         return
     vm.migrate_host_datastore(dest_host, dest_datastore)
+
+
+def get_esxi_rules():
+    return vmwareapi.RULES
+
+
+def get_esxi_services():
+    return vmwareapi.SERVICES
+
+
+def cfg_esxi_service(vc, hosts, service, action):
+    host_list = get_host_list(hosts)
+    for host_name in host_list:
+        host = vc.get_host_by_name(host_name)
+        if host:
+            host.config_services(service, action)
+        else:
+            print 'Host {} not exist in VC'.format(host_name)
+
+
+def cfg_esxi_fw_rule(vc, hosts, rule, action):
+    host_list = get_host_list(hosts)
+    for host_name in host_list:
+        host = vc.get_host_by_name(host_name)
+        if host:
+            host.config_firewall(rule, action)
+        else:
+            print 'Host {} not exist in VC'.format(host_name)
