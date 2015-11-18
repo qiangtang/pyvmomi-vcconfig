@@ -83,6 +83,26 @@ class VirtualCenter(ManagedObject):
         return connect_me
 
     @requires_connection
+    def assign_role(self, user, role_name):
+        authmgr = self.si.RetrieveContent().authorizationManager
+        roles = authmgr.roleList
+        role_id = 0
+        for role in roles:
+            if role.name == role_name:
+                role_id = role.roleId
+                break
+            if role is roles[-1]:
+                print("Failed to get target role.")
+                return None
+        permission = vim.AuthorizationManager.Permission()
+        permission.principal = user
+        permission.group = False
+        permission.propagate = True
+        permission.roleId = role_id
+        authmgr.SetEntityPermissions(self.get_root_folder(self.si),
+                                     [permission])
+
+    @requires_connection
     def create_datacenter(self, name):
         """Creates a datacenter in the root folder.
 
