@@ -524,6 +524,16 @@ class VM(ManagedObject):
     def unregister(self):
         self.vm.Unregister()
 
+    def clone(self, name):
+        relocate_spec = vim.vm.RelocateSpec()
+        relocate_spec.pool = self.vm.resourcePool
+        clone_spec = vim.vm.CloneSpec(powerOn=False,
+                                      template=False,
+                                      location=relocate_spec,
+                                      customization=None)
+        clone_task = self.vm.Clone(self.vm.parent, name, clone_spec)
+        task.WaitForTask(task=clone_task, si=self.si)
+
     def snapshot(self, snap_name):
         snapshot_task = self.vm.CreateSnapshot(snap_name, snap_name, True, True)
         task.WaitForTask(task=snapshot_task, si=self.si)

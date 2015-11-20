@@ -52,7 +52,8 @@ def migrate_parser(subparsers):
     parser.add_argument(
         '--folder',
         action='store',
-        help='[Optional] Folder name where the vm inside. Root folder by default',
+        help='[Optional] Folder name where the vm inside. '
+             'Find from root folder by default.',
         default=None,
         dest='folder'
     )
@@ -83,7 +84,8 @@ def poweron_parser(subparsers):
     parser.add_argument(
         '--folder',
         action='store',
-        help='[Optional] Folder name where the vm inside. Root folder by default',
+        help='[Optional] Folder name where the vm inside. '
+             'Find from root folder by default.',
         default=None,
         dest='folder'
     )
@@ -114,7 +116,8 @@ def poweroff_parser(subparsers):
     parser.add_argument(
         '--folder',
         action='store',
-        help='[Optional] Folder name where the vm inside. Root folder by default',
+        help='[Optional] Folder name where the vm inside. '
+             'Find from root folder by default.',
         default=None,
         dest='folder'
     )
@@ -145,7 +148,8 @@ def reset_parser(subparsers):
     parser.add_argument(
         '--folder',
         action='store',
-        help='[Optional] Folder name where the vm inside. Root folder by default',
+        help='[Optional] Folder name where the vm inside. '
+             'Find from root folder by default.',
         default=None,
         dest='folder'
     )
@@ -176,7 +180,8 @@ def reboot_parser(subparsers):
     parser.add_argument(
         '--folder',
         action='store',
-        help='[Optional] Folder name where the vm inside. Root folder by default',
+        help='[Optional] Folder name where the vm inside. '
+             'Find from root folder by default.',
         default=None,
         dest='folder'
     )
@@ -214,7 +219,8 @@ def snapshot_parser(subparsers):
     parser.add_argument(
         '--folder',
         action='store',
-        help='[Optional] Folder name where the vm inside. Root folder by default',
+        help='[Optional] Folder name where the vm inside. '
+             'Find from root folder by default.',
         default=None,
         dest='folder'
     )
@@ -245,7 +251,8 @@ def destroy_parser(subparsers):
     parser.add_argument(
         '--folder',
         action='store',
-        help='[Optional] Folder name where the vm inside. Root folder by default',
+        help='[Optional] Folder name where the vm inside. '
+             'Find from root folder by default.',
         default=None,
         dest='folder'
     )
@@ -276,8 +283,47 @@ def unregister_parser(subparsers):
     parser.add_argument(
         '--folder',
         action='store',
-        help='[Optional] Folder name where the vm inside. Root folder by default',
+        help='[Optional] Folder name where the vm inside. '
+             'Find from root folder by default.',
         default=None,
         dest='folder'
     )
     parser.set_defaults(func=unregister)
+
+
+def clone(args):
+    vc = _get_vc()
+    print 'Clone vm {} from {}'.format(args.clone_name, args.vm_name)
+    vm = vc.get_vm_by_name(args.vm_name.strip(), args.src_folder)
+    vm.clone(args.clone_name.strip())
+
+
+def clone_parser(subparsers):
+    parser = subparsers.add_parser(
+        'vm-clone',
+        help='Clone a new vm from the source vm. '
+             'Same location and resources using as the source VM.'
+    )
+    parser.add_argument(
+        '--vm',
+        action='store',
+        required=True,
+        help='Source vm which the new vm cloned from.',
+        dest='vm_name'
+    )
+    parser.add_argument(
+        '--name',
+        action='store',
+        required=True,
+        help='Name of the new created vm.',
+        dest='clone_name'
+    )
+    parser.add_argument(
+        '--src-folder',
+        action='store',
+        help='[Optional] Folder name where the source vm inside. '
+             'Find from root folder by default.',
+        default=None,
+        dest='src_folder'
+    )
+    parser.set_defaults(func=clone)

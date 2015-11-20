@@ -50,6 +50,7 @@ def main():
     parsers_vm.snapshot_parser(subparsers)
     parsers_vm.destroy_parser(subparsers)
     parsers_vm.unregister_parser(subparsers)
+    parsers_vm.clone_parser(subparsers)
 
     args = parser.parse_args()
     args.func(args)
