@@ -86,3 +86,32 @@ def config_rule_parser(subparsers):
         dest='rule'
     )
     parser.set_defaults(func=config_rule)
+
+
+def maintenance(args):
+    vc = _get_vc()
+    host = vc.get_host_by_name(args.host_name.strip())
+    host.maintenance(args.action)
+
+
+def maintenance_parser(subparsers):
+    parser = subparsers.add_parser(
+        'host-maintenance',
+        help='Enter/exit maintenance mode on target host.'
+    )
+    parser.add_argument(
+        '--host',
+        action='store',
+        required=True,
+        help='Name of host to enter/exit maintenance mode',
+        dest='host_name'
+    )
+    parser.add_argument(
+        '--action',
+        action='store',
+        required=True,
+        help='Action for the host. enter/exit',
+        choices=['enter', 'exit'],
+        dest='action'
+    )
+    parser.set_defaults(func=maintenance)

@@ -439,6 +439,21 @@ class Host(ManagedObject):
                 print "Not support config rule {} on {} yet."\
                     .format(rule, self.host_system.name)
 
+    def maintenance(self, action='enter'):
+        actions = ['enter', 'exit']
+        action = action.lower()
+        if action not in actions:
+            print 'Action {} not support on host {}'\
+                .format(action, self.host_system.name)
+            return
+        print 'Host {} {} maintenance mode.'.format(self.host_system.name,
+                                                     action)
+        if action == 'enter':
+            main_task = self.host_system.EnterMaintenanceMode(0)
+        else:
+            main_task = self.host_system.ExitMaintenanceMode(0)
+        task.WaitForTask(task=main_task, si=self.si)
+
 
 class VM(ManagedObject):
 
@@ -502,13 +517,18 @@ class VM(ManagedObject):
         state = self.vm.runtime.powerState
         return state
 
-    def poweron(self):
-        poweron_task = self.vm.PowerOn()
-        task.WaitForTask(task=poweron_task, si=self.si)
-
-    def poweroff(self):
-        poweroff_task = self.vm.PowerOff()
-        task.WaitForTask(task=poweroff_task, si=self.si)
+    def power(self, action='on'):
+        actions = ['on', 'off']
+        action = action.lower()
+        if action not in actions:
+            print 'Action {} not support on vm {}'.format(action, self.name())
+            return
+        print 'VM {} power {}.'.format(self.name(), action)
+        if action == 'on':
+            power_task = self.vm.PowerOn()
+        else:
+            power_task = self.vm.PowerOff()
+        task.WaitForTask(task=power_task, si=self.si)
 
     def reset(self):
         reset_task = self.vm.Reset()

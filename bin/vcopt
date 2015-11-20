@@ -40,11 +40,11 @@ def main():
     # Host action site
     parsers_host.config_service_parser(subparsers)
     parsers_host.config_rule_parser(subparsers)
+    parsers_host.maintenance_parser(subparsers)
 
     # VM action site
     parsers_vm.migrate_parser(subparsers)
-    parsers_vm.poweron_parser(subparsers)
-    parsers_vm.poweroff_parser(subparsers)
+    parsers_vm.power_parser(subparsers)
     parsers_vm.reset_parser(subparsers)
     parsers_vm.reboot_parser(subparsers)
     parsers_vm.snapshot_parser(subparsers)

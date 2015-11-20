@@ -60,19 +60,18 @@ def migrate_parser(subparsers):
     parser.set_defaults(func=migrate)
 
 
-def poweron(args):
+def power(args):
     vc = _get_vc()
     vm_names = args.vm_name.strip().split(',')
     for vm_name in vm_names:
-        print 'Power on vm ' + vm_name
         vm = vc.get_vm_by_name(vm_name.strip(), args.folder)
-        vm.poweron()
+        vm.power(args.action)
 
 
-def poweron_parser(subparsers):
+def power_parser(subparsers):
     parser = subparsers.add_parser(
-        'vm-poweron',
-        help='Power on target vm.'
+        'vm-power',
+        help='Power on/off target vm.'
     )
     parser.add_argument(
         '--vm',
@@ -82,36 +81,12 @@ def poweron_parser(subparsers):
         dest='vm_name'
     )
     parser.add_argument(
-        '--folder',
-        action='store',
-        help='[Optional] Folder name where the vm inside. '
-             'Find from root folder by default.',
-        default=None,
-        dest='folder'
-    )
-    parser.set_defaults(func=poweron)
-
-
-def poweroff(args):
-    vc = _get_vc()
-    vm_names = args.vm_name.strip().split(',')
-    for vm_name in vm_names:
-        print 'Power off vm ' + vm_name
-        vm = vc.get_vm_by_name(vm_name.strip(), args.folder)
-        vm.poweroff()
-
-
-def poweroff_parser(subparsers):
-    parser = subparsers.add_parser(
-        'vm-poweroff',
-        help='Power off target vm.'
-    )
-    parser.add_argument(
-        '--vm',
+        '--action',
         action='store',
         required=True,
-        help='Target vm name list. Separated by comma.',
-        dest='vm_name'
+        help='Action for power status change. on/off',
+        choices=['on', 'off'],
+        dest='action'
     )
     parser.add_argument(
         '--folder',
@@ -121,7 +96,7 @@ def poweroff_parser(subparsers):
         default=None,
         dest='folder'
     )
-    parser.set_defaults(func=poweroff)
+    parser.set_defaults(func=power)
 
 
 def reset(args):
