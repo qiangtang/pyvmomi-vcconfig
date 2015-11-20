@@ -96,7 +96,7 @@ def maintenance(args):
 
 def maintenance_parser(subparsers):
     parser = subparsers.add_parser(
-        'host-maintenance',
+        'host-maintain',
         help='Enter/exit maintenance mode on target host.'
     )
     parser.add_argument(
