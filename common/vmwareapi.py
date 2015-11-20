@@ -129,7 +129,7 @@ class VirtualCenter(ManagedObject):
         return Datacenter(self.si, dcs[0]) if len(dcs) > 0 else None
 
     @requires_connection
-    def get_vm_by_name(self, name, type="vm"):
+    def get_vm_by_name(self, name, folder_name=None):
         """Returns a reference to vm by its name.
 
         @param name: name of the vm
@@ -140,8 +140,12 @@ class VirtualCenter(ManagedObject):
             container=self.get_root_folder(self.si),
             type=[vim.VirtualMachine],
             recursive=True)
-        vms = [vm for vm in invtvw.view if vm.name == name]
-        return VM(self.si, vms[0]) if len(vms) > 0 else None
+        for vm in invtvw.view:
+            if vm.name == name:
+                if folder_name and vm.parent.name != folder_name:
+                    continue
+                return VM(self.si, vm)
+        return None
 
     @requires_connection
     def get_datastore(self, name=None):
@@ -498,13 +502,31 @@ class VM(ManagedObject):
         state = self.vm.runtime.powerState
         return state
 
+    def poweron(self):
+        poweron_task = self.vm.PowerOn()
+        task.WaitForTask(task=poweron_task, si=self.si)
+
     def poweroff(self):
         poweroff_task = self.vm.PowerOff()
         task.WaitForTask(task=poweroff_task, si=self.si)
 
+    def reset(self):
+        reset_task = self.vm.Reset()
+        task.WaitForTask(task=reset_task, si=self.si)
+
+    def rebootvm(self):
+        self.vm.RebootGuest()
+
     def destroy(self):
         destroy_task = self.vm.Destroy()
         task.WaitForTask(task=destroy_task, si=self.si)
+
+    def unregister(self):
+        self.vm.Unregister()
+
+    def snapshot(self, snap_name):
+        snapshot_task = self.vm.CreateSnapshot(snap_name, snap_name, True, True)
+        task.WaitForTask(task=snapshot_task, si=self.si)
 
     def migrate_host_datastore(self, dest_host, dest_datastore):
         # Support change both host and datastore

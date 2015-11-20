@@ -14,6 +14,7 @@ def _get_vc():
     return operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
 
+# VC site operations
 def assign_role(args):
     vc = operations.get_vcenter(args.vc_ip, args.vc_user, args.vc_pwd)
     vc.assign_role(args.account, args.role)
@@ -111,6 +112,7 @@ def init_vc_parser(subparsers):
     parser.set_defaults(func=init_vc)
 
 
+# DC site operations
 def add_dc(args):
     vc = _get_vc()
     dc_names = args.dc_names.strip().split(',')
@@ -133,6 +135,66 @@ def add_dc_parser(subparsers):
     parser.set_defaults(func=add_dc)
 
 
+def add_dvs(args):
+    vc = _get_vc()
+    dc = operations.get_datacenter(vc, args.dc_name)
+    dvs_name = args.dvs_name
+    target_hosts_str = args.target_hosts
+    nic_index = args.nic_item
+    pgs_pair = args.pg_pairs.split(',')
+    operations.create_dvs(vc, dc, dvs_name, nic_index, target_hosts_str,
+                          pgs_pair)
+
+
+def add_dvs_parser(subparsers):
+    parser = subparsers.add_parser(
+        'add-dvs',
+        help='Add dv switch to the target Data Center with port groups. '
+             'Or config existing dv switch'
+    )
+    parser.add_argument(
+        '--dc',
+        action='store',
+        required=True,
+        help='Data Center Name.',
+        dest='dc_name'
+    )
+    parser.add_argument(
+        '--dvs',
+        action='store',
+        required=True,
+        help='Dvs name',
+        dest='dvs_name'
+    )
+    parser.add_argument(
+        '--nic',
+        action='store',
+        type=int,
+        required=True,
+        help='Nic number used for hosts added. E.g. 1',
+        dest='nic_item'
+    )
+    parser.add_argument(
+        '--host',
+        action='store',
+        help='[Optional] Hosts added to the dvs. Support single ip/fqdn or '
+             'ip-range. Ignore this if all hosts to be added. '
+             'Separated by comma.',
+        default=None,
+        dest='target_hosts'
+    )
+    parser.add_argument(
+        '--pg-pair',
+        action='store',
+        help='[Optional] Port group pairs to be added in the dvs. '
+             '<pg_name:vlan_id> E.g. pg1:100. Separated by comma.',
+        default=None,
+        dest='pg_pairs'
+    )
+    parser.set_defaults(func=add_dvs)
+
+
+# Cluster site operations
 def add_cluster(args):
     vc = _get_vc()
     dc = operations.get_datacenter(vc, args.dc_name)
@@ -172,6 +234,7 @@ def add_cluster_parser(subparsers):
     parser.set_defaults(func=add_cluster)
 
 
+# Host site operations
 def add_host(args):
     vc = _get_vc()
     dc = operations.get_datacenter(vc, args.dc_name)
@@ -251,7 +314,7 @@ def config_host_parser(subparsers):
     parser.add_argument(
         '--license',
         action='store',
-        help='[Optional] License key to be assigned to hosts',
+        help='[Optional] License key to be assigned to hosts.',
         default=None,
         dest='license'
     )
@@ -302,173 +365,3 @@ def add_nfs_parser(subparsers):
         dest='target_hosts'
     )
     parser.set_defaults(func=add_nfs)
-
-
-def add_dvs(args):
-    vc = _get_vc()
-    dc = operations.get_datacenter(vc, args.dc_name)
-    dvs_name = args.dvs_name
-    target_hosts_str = args.target_hosts
-    nic_index = args.nic_item
-    pgs_pair = args.pg_pairs.split(',')
-    operations.create_dvs(vc, dc, dvs_name, nic_index, target_hosts_str,
-                          pgs_pair)
-
-
-def add_dvs_parser(subparsers):
-    parser = subparsers.add_parser(
-        'add-dvs',
-        help='Add dv switch to the target Data Center with port groups. '
-             'Or config existing dv switch'
-    )
-    parser.add_argument(
-        '--dc',
-        action='store',
-        required=True,
-        help='Data Center Name.',
-        dest='dc_name'
-    )
-    parser.add_argument(
-        '--dvs',
-        action='store',
-        required=True,
-        help='Dvs name',
-        dest='dvs_name'
-    )
-    parser.add_argument(
-        '--nic',
-        action='store',
-        type=int,
-        required=True,
-        help='Nic number used for hosts added. E.g. 1',
-        dest='nic_item'
-    )
-    parser.add_argument(
-        '--host',
-        action='store',
-        help='[Optional] Hosts added to the dvs. Support single ip/fqdn or '
-             'ip-range. Ignore this if all hosts to be added. '
-             'Separated by comma.',
-        default=None,
-        dest='target_hosts'
-    )
-    parser.add_argument(
-        '--pg-pair',
-        action='store',
-        help='[Optional] Port group pairs to be added in the dvs. '
-             '<pg_name:vlan_id> E.g. pg1:100. Separated by comma.',
-        default=None,
-        dest='pg_pairs'
-    )
-    parser.set_defaults(func=add_dvs)
-
-
-def migrate(args):
-    vc = _get_vc()
-    vmotion_vm = args.vmotion_vm
-    dest_host = args.dest_host
-    dest_datastore = args.dest_datastore
-    operations.vmotion(vc, vmotion_vm, dest_host, dest_datastore)
-
-
-def vmotion_parser(subparsers):
-    parser = subparsers.add_parser(
-        'migrate',
-        help='Migrate vm to target datastore on target host.'
-    )
-    parser.add_argument(
-        '--vm',
-        action='store',
-        required=True,
-        help='Target vm name to be migrated.',
-        dest='vmotion_vm'
-    )
-    parser.add_argument(
-        '--host',
-        action='store',
-        required=True,
-        help='Target host the vm to be migrated',
-        dest='dest_host'
-    )
-    parser.add_argument(
-        '--datastore',
-        action='store',
-        required=True,
-        help='Target datastore the vm to be migrated',
-        dest='dest_datastore'
-    )
-    parser.set_defaults(func=migrate)
-
-
-def config_service(args):
-    vc = _get_vc()
-    operations.cfg_esxi_service(vc, args.hosts, args.service, args.action)
-
-
-def config_service_parser(subparsers):
-    parser = subparsers.add_parser(
-        'cfg-service',
-        help='Start/stop service on target host.'
-    )
-    parser.add_argument(
-        '--host',
-        action='store',
-        required=True,
-        help='Target host list. Support single ip/fqdn or ip-range. '
-             'Separated by comma',
-        dest='hosts'
-    )
-    parser.add_argument(
-        '--action',
-        action='store',
-        required=True,
-        help='Action for the service. start/stop',
-        choices=['start', 'stop'],
-        dest='action'
-    )
-    parser.add_argument(
-        '--service',
-        action='store',
-        required=True,
-        help='Service to be config',
-        choices=operations.get_esxi_services(),
-        dest='service'
-    )
-    parser.set_defaults(func=config_service)
-
-
-def config_rule(args):
-    vc = _get_vc()
-    operations.cfg_esxi_fw_rule(vc, args.hosts, args.rule, args.action)
-
-
-def config_rule_parser(subparsers):
-    parser = subparsers.add_parser(
-        'cfg-rule',
-        help='Enable/disable firewall rule on target host.'
-    )
-    parser.add_argument(
-        '--host',
-        action='store',
-        required=True,
-        help='Target host list. Support single ip/fqdn or ip-range. '
-             'Separated by comma',
-        dest='hosts'
-    )
-    parser.add_argument(
-        '--action',
-        action='store',
-        required=True,
-        help='Action for the rule. enable/disable',
-        choices=['enable', 'disable'],
-        dest='action'
-    )
-    parser.add_argument(
-        '--rule',
-        action='store',
-        required=True,
-        help='Rule to be config',
-        choices=operations.get_esxi_rules(),
-        dest='rule'
-    )
-    parser.set_defaults(func=config_rule)

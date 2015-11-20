@@ -21,9 +21,9 @@ Installation:
     -- python setup.py install
 
 
-For vcops: Command line tool for vc config
-   Run as the help: vcops -h
-      -- Init vc account info: vcops init-vc --ip <vc_ip> -u <vc_user> -p <vc_pwd>
+For vcopt: Command line tool for vc config
+   Run as the help: vcopt -h
+      -- Init vc account info: vcopt init-vc --ip <vc_ip> -u <vc_user> -p <vc_pwd>
       -- Run other funcs as help
 
 

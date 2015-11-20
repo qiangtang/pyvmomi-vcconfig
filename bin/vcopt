@@ -1,0 +1,58 @@
+#!/usr/bin/python
+
+import argparse
+import ssl
+from common import parsers_common
+from common import parsers_host
+from common import parsers_vm
+
+
+def init_ssl():
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+    except AttributeError:
+        # Legacy Python that doesn't verify HTTPS certificates by default
+        pass
+    else:
+        # Handle target environment that doesn't support HTTPS verification
+        ssl._create_default_https_context = _create_unverified_https_context
+
+
+def main():
+    init_ssl()
+
+    parser = argparse.ArgumentParser(description='CLI for VC Operations.')
+    subparsers = parser.add_subparsers(help='sub-command help',
+                                       dest='sub_cmd')
+    # VC common site
+    parsers_common.assign_role_parser(subparsers)
+    parsers_common.init_vc_parser(subparsers)
+    # DC common site
+    parsers_common.add_dc_parser(subparsers)
+    parsers_common.add_dvs_parser(subparsers)
+    # Cluster site
+    parsers_common.add_cluster_parser(subparsers)
+    # Host common site
+    parsers_common.add_host_parser(subparsers)
+    parsers_common.config_host_parser(subparsers)
+    parsers_common.add_nfs_parser(subparsers)
+
+    # Host action site
+    parsers_host.config_service_parser(subparsers)
+    parsers_host.config_rule_parser(subparsers)
+
+    # VM action site
+    parsers_vm.migrate_parser(subparsers)
+    parsers_vm.poweron_parser(subparsers)
+    parsers_vm.poweroff_parser(subparsers)
+    parsers_vm.reset_parser(subparsers)
+    parsers_vm.reboot_parser(subparsers)
+    parsers_vm.snapshot_parser(subparsers)
+    parsers_vm.destroy_parser(subparsers)
+    parsers_vm.unregister_parser(subparsers)
+
+    args = parser.parse_args()
+    args.func(args)
+
+if __name__ == '__main__':
+    main()

@@ -218,8 +218,8 @@ def add_nfs_to_host(vc, remote_host, remote_path, ds_name, target_hosts):
                     .format(host_name)
 
 
-def vmotion(vc, vm_name, dest_host_name, dest_datastore_name):
-    vm = vc.get_vm_by_name(vm_name)
+def vmotion(vc, vm_name, dest_host_name, dest_datastore_name, folder=None):
+    vm = vc.get_vm_by_name(vm_name, folder)
     dest_host = vc.get_host_by_name(dest_host_name)
     dest_datastore = vc.get_datastore(dest_datastore_name)
     if vm is None:
