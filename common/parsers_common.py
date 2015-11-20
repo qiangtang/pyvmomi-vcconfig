@@ -334,7 +334,7 @@ def add_nfs(args):
 def add_nfs_parser(subparsers):
     parser = subparsers.add_parser(
         'add-nfs',
-        help='Mount nfs datastore to targets hosts.'
+        help='Mount nfs datastore to target hosts.'
     )
     parser.add_argument(
         '--ds-name',
