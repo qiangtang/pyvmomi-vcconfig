@@ -1,15 +1,29 @@
 The tool helps to create/config the VC Env.
 
 Func Supported:
+1> VC Operations
+   1 Create DataCenter (Name)
+   2 Create VC Cluster with spec (Name, DRS, HA)
+   3 Add hosts to the target VC Cluster
+   4 Config host with spec (SSH, NTP, license)
+   5 Create DvSwitch Network (Create / Reconfig)
+   6 Add PortGroup to the DvSwitch with spec (Name, VLAN_ID, Nic_Selected)
+   7 Mount NFS to the target host.
 
-1 Create DataCenter (Name)
-2 Create VC Cluster with spec (Name, DRS, HA)
-3 Add hosts to the target VC Cluster
-4 Config host with spec (SSH, NTP, license)
-5 Create DvSwitch Network (Create / Reconfig)
-6 Add PortGroup to the DvSwitch with spec (Name, VLAN_ID, Nic_Selected)
-7 Mount NFS to the target host.
-8 VM vMotion to spec host/datastore.
+   8 Config service on ESXi.
+   9 Config firewall rule on ESXi.
+   10 Make ESXi enter/exit maintenance mode.
+
+   11 VM vMotion to spec host/datastore.
+   12 Power on/off target VMs.
+   13 Reboot/reset target VMs.
+   14 Snapshot VMs.
+   15 Destroy VMs.
+   16 Unregister VMs from inventory.
+   17 Clone VM.
+
+2> Clean up
+   Resource clean up (VM, Network, Folder)
 
 
 Installation:
