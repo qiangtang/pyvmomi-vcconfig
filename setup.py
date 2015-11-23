@@ -6,6 +6,7 @@ setup(
     scripts=['bin/vc-config',
              'bin/clean_up',
              'bin/vcopt'],
-    packages=['common'],
+    packages=['common',
+              'common.parser'],
     data_files=[('/usr/local/data', ['data/config.ini'])]
 )

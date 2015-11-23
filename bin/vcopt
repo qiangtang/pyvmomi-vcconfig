@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
 import argparse
-from common import parsers_common
-from common import parsers_host
-from common import parsers_vm
+from common.parser import parsers_common
+from common.parser import parsers_host
+from common.parser import parsers_vm
 from common import utils
 
 

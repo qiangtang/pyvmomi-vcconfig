@@ -1,6 +1,6 @@
 import ConfigParser
-import operations
-import utils
+from common import operations
+from common import utils
 
 
 def _get_vc():
