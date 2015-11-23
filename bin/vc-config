@@ -2,49 +2,33 @@
 
 import ConfigParser
 import logging
-import ssl
-
 from common import operations
+from common import utils
 
 LOG = logging.getLogger(__name__)
-CONFIG_FILE_PATH = '/usr/local/data/config.ini'
-
-VC_SECTION = 'vc_info'
-DC_SECTION = 'dc_info'
-CLUSTER_SECTION_PREFIX = 'cluster_info'
-HOST_SECTION = 'host_info'
-DVS_SECTION_PREFIX = 'dvs_info'
-NFS_PREFIX = 'nfs_info'
 
 
 def main():
-    try:
-        _create_unverified_https_context = ssl._create_unverified_context
-    except AttributeError:
-        # Legacy Python that doesn't verify HTTPS certificates by default
-        pass
-    else:
-        # Handle target environment that doesn't support HTTPS verification
-        ssl._create_default_https_context = _create_unverified_https_context
+    utils.init_ssl()
 
     cf = ConfigParser.ConfigParser()
-    cf.read(CONFIG_FILE_PATH)
+    cf.read(utils.CONFIG_FILE_PATH)
 
-    vc_ip = cf.get(VC_SECTION, 'vc_ip')
-    vc_user = cf.get(VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(VC_SECTION, 'vc_pwd')
+    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
+    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
+    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
     vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
     # Add DC
-    dc_name = cf.get(DC_SECTION, 'dc')
+    dc_name = cf.get(utils.DC_SECTION, 'dc')
     dc = operations.get_datacenter(vc, dc_name)
 
     # Add hosts to cluster
-    host_user = cf.get(HOST_SECTION, 'user')
-    host_pwd = cf.get(HOST_SECTION, 'pwd')
+    host_user = cf.get(utils.HOST_SECTION, 'user')
+    host_pwd = cf.get(utils.HOST_SECTION, 'pwd')
     sections = cf.sections()
     for section in sections:
-        if section.startswith(CLUSTER_SECTION_PREFIX):
+        if section.startswith(utils.CLUSTER_SECTION_PREFIX):
             cluster_name = cf.get(section, 'name')
             services = cf.get(section, 'services')
             host_names = cf.get(section, 'host_add_list')
@@ -54,14 +38,14 @@ def main():
                                             host_names)
 
     # Config all hosts
-    host_ntp = cf.get(HOST_SECTION, 'ntp')
-    host_licensekey = cf.get(HOST_SECTION, 'license')
-    services = cf.get(HOST_SECTION, 'services')
+    host_ntp = cf.get(utils.HOST_SECTION, 'ntp')
+    host_licensekey = cf.get(utils.HOST_SECTION, 'license')
+    services = cf.get(utils.HOST_SECTION, 'services')
     operations.config_hosts(vc, services, host_ntp, host_licensekey)
 
     # Create Dvs with port group config
     for section in sections:
-        if section.startswith(DVS_SECTION_PREFIX):
+        if section.startswith(utils.DVS_SECTION_PREFIX):
             dvs_name = cf.get(section, 'name')
             target_hosts_str = cf.get(section, 'host_list')
             nic_index = int(cf.get(section, 'nic_item'))
@@ -71,7 +55,7 @@ def main():
 
     # Mount nfs to hosts
     for section in sections:
-        if section.startswith(NFS_PREFIX):
+        if section.startswith(utils.NFS_PREFIX):
             ds_name = cf.get(section, 'local_name')
             remote_host = cf.get(section, 'remote_host')
             remote_path = cf.get(section, 'remote_path')

@@ -2,12 +2,11 @@
 
 import logging
 import ConfigParser
-import ssl
 from optparse import OptionParser
 from common import operations
+from common import utils
 
 LOG = logging.getLogger(__name__)
-CONFIG_FILE_PATH = '/usr/local/data/config.ini'
 
 
 def clean_vms(vc, vm_keys_list):
@@ -47,14 +46,7 @@ def clean_folders(vc, folder_keys_list):
 
 
 def main():
-    try:
-        _create_unverified_https_context = ssl._create_unverified_context
-    except AttributeError:
-        # Legacy Python that doesn't verify HTTPS certificates by default
-        pass
-    else:
-        # Handle target environment that doesn't support HTTPS verification
-        ssl._create_default_https_context = _create_unverified_https_context
+    utils.init_ssl()
 
     vm_keys_list = ['.*\s\(\w+-\w+-\w+-\w+-\w+\)']
 
@@ -62,8 +54,7 @@ def main():
                      'edge-\w+-\w+-\w+-\w+-\w+-\w+',
                      'vxw-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+-\w+']
 
-    folder_keys_list = ['folder-.*',
-                        'folder2']
+    folder_keys_list = ['folder-.*']
 
     clean_def_resource = True
 
@@ -89,7 +80,7 @@ def main():
         folder_keys_list = options.fd_regx.split(',')
 
     cf = ConfigParser.ConfigParser()
-    cf.read(CONFIG_FILE_PATH)
+    cf.read(utils.CONFIG_FILE_PATH)
 
     vc = operations.get_vcenter(cf)
     if clean_def_resource:

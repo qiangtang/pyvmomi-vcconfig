@@ -234,14 +234,6 @@ def vmotion(vc, vm_name, dest_host_name, dest_datastore_name, folder=None):
     vm.migrate_host_datastore(dest_host, dest_datastore)
 
 
-def get_esxi_rules():
-    return vmwareapi.RULES
-
-
-def get_esxi_services():
-    return vmwareapi.SERVICES
-
-
 def cfg_esxi_service(vc, hosts, service, action):
     host_list = get_host_list(hosts)
     for host_name in host_list:

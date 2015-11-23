@@ -345,17 +345,6 @@ class Cluster(ManagedObject):
         return self.cluster._moId
 
 
-# Firewall rule on ESXi
-# cmmds: Virtual SAN Clustering Services
-RULES = ['httpClient', 'syslog', 'nfsClient', 'ntpClient',
-         'sshServer', 'sshClient', 'faultTolerance', 'vMotion',
-         'vsanvp', 'rabbitmqproxy', 'dhcp', 'dns', 'cmmds',
-         'activeDirectoryAll', 'webAccess']
-
-# Services on ESXi
-SERVICES = ['TSM-SSH', 'ntpd', 'snmpd']
-
-
 class Host(ManagedObject):
 
     def __init__(self, si, host_system):
@@ -398,6 +387,7 @@ class Host(ManagedObject):
             .CreateNasDatastore(ds_spec)
 
     def config_services(self, service_names, action='start'):
+        from utils import SERVICES
         action_list = ['start', 'stop']
         action = action.lower()
         if action not in action_list:
@@ -419,6 +409,7 @@ class Host(ManagedObject):
                     .format(service, self.host_system.name)
 
     def config_firewall(self, rule_names, action='enable'):
+        from utils import RULES
         action_list = ['enable', 'disable']
         action = action.lower()
         if action not in action_list:

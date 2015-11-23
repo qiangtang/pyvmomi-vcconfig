@@ -1,16 +1,14 @@
 import ConfigParser
 import operations
-
-CONFIG_FILE_PATH = '/usr/local/data/config.ini'
-VC_SECTION = 'vc_info'
+import utils
 
 
 def _get_vc():
     cf = ConfigParser.ConfigParser()
-    cf.read(CONFIG_FILE_PATH)
-    vc_ip = cf.get(VC_SECTION, 'vc_ip')
-    vc_user = cf.get(VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(VC_SECTION, 'vc_pwd')
+    cf.read(utils.CONFIG_FILE_PATH)
+    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
+    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
+    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
     return operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
 
@@ -45,7 +43,7 @@ def config_service_parser(subparsers):
         action='store',
         required=True,
         help='Service to be config',
-        choices=operations.get_esxi_services(),
+        choices=utils.SERVICES,
         dest='service'
     )
     parser.set_defaults(func=config_service)
@@ -82,7 +80,7 @@ def config_rule_parser(subparsers):
         action='store',
         required=True,
         help='Rule to be config',
-        choices=operations.get_esxi_rules(),
+        choices=utils.RULES,
         dest='rule'
     )
     parser.set_defaults(func=config_rule)

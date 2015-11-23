@@ -1,25 +1,14 @@
 #!/usr/bin/python
 
 import argparse
-import ssl
 from common import parsers_common
 from common import parsers_host
 from common import parsers_vm
-
-
-def init_ssl():
-    try:
-        _create_unverified_https_context = ssl._create_unverified_context
-    except AttributeError:
-        # Legacy Python that doesn't verify HTTPS certificates by default
-        pass
-    else:
-        # Handle target environment that doesn't support HTTPS verification
-        ssl._create_default_https_context = _create_unverified_https_context
+from common import utils
 
 
 def main():
-    init_ssl()
+    utils.init_ssl()
 
     parser = argparse.ArgumentParser(description='CLI for VC Operations.')
     subparsers = parser.add_subparsers(help='sub-command help',
