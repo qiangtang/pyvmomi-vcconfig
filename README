@@ -39,20 +39,20 @@ Installation:
     -- python setup.py install
 
 
-For vcopt: Command line tool for vc config
-   Run as the help: vcopt -h
-      -- Init vc account info: vcopt init-vc --ip <vc_ip> -u <vc_user> -p <vc_pwd>
+For vc-opt: Command line tool for vc config
+   Run as the help: vc-opt -h
+      -- Init vc account info: vc-opt init-vc --ip <vc_ip> -u <vc_user> -p <vc_pwd>
       -- Run other funcs as help
 
 
-For vc-config: One step tool for vc config
-   Run by default: vc-config
+For vc-cfg: One step tool for vc config
+   Run by default: vc-cfg
      --  Update the /usr/local/data/config.ini file
      --  This will config your vc as data defined in the config.ini file
 
 
-For clean_up:
+For vc-clean:
    1 Run by default: clean_up
      --  This will clean resources as the regular expression defined in the main()
-   2 Run by options: clean_up --vm-regx <reg-vm> --net-regx <reg-net> --fd-regx <reg-folder>
+   2 Run by options: vc-clean --vm-regx <reg-vm> --net-regx <reg-net> --fd-regx <reg-folder>
      --  This will clean as your regular defined or you can run each separately

@@ -82,7 +82,11 @@ def main():
     cf = ConfigParser.ConfigParser()
     cf.read(utils.CONFIG_FILE_PATH)
 
-    vc = operations.get_vcenter(cf)
+    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
+    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
+    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
+
     if clean_def_resource:
         clean_vms(vc, vm_keys_list)
         clean_nets(vc, net_keys_list)
