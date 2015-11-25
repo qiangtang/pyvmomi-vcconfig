@@ -125,8 +125,10 @@ class VirtualCenter(ManagedObject):
             container=self.get_root_folder(self.si),
             type=[vim.Datacenter],
             recursive=True)
-        dcs = [dc for dc in invtvw.view if dc.name == name]
-        return Datacenter(self.si, dcs[0]) if len(dcs) > 0 else None
+        for dc in invtvw.view:
+            if dc.name == name:
+                return Datacenter(self.si, dc)
+        return None
 
     @requires_connection
     def get_vm_by_name(self, name, folder_name=None):
@@ -148,27 +150,16 @@ class VirtualCenter(ManagedObject):
         return None
 
     @requires_connection
-    def get_datastore(self, name=None):
+    def get_datastore_by_name(self, name):
         vmgr = self.si.RetrieveContent().viewManager
         invtvw = vmgr.CreateContainerView(
             container=self.get_root_folder(self.si),
             type=[vim.Datastore],
             recursive=True)
-        if name:
-            ds = [ds for ds in invtvw.view if ds.name == name]
-        else:
-            ds = invtvw.view
-
-        return DataStore(self.si, ds[0]) if ds else None
-
-    @requires_connection
-    def get_hosts(self):
-        vmgr = self.si.RetrieveContent().viewManager
-        invtvw = vmgr.CreateContainerView(
-            container=self.get_root_folder(self.si),
-            type=[vim.HostSystem],
-            recursive=True)
-        return [Host(self.si, h) for h in invtvw.view]
+        for ds in invtvw.view:
+            if ds.name == name:
+                return DataStore(self.si, ds)
+        return None
 
     @requires_connection
     def get_host_by_name(self, name):
@@ -177,12 +168,10 @@ class VirtualCenter(ManagedObject):
             container=self.get_root_folder(self.si),
             type=[vim.HostSystem],
             recursive=True)
-        host = None
-        for h in invtvw.view:
-            if h.name == name:
-                host = h
-                break
-        return Host(self.si, host) if host else None
+        for host in invtvw.view:
+            if host.name == name:
+                return Host(self.si, host)
+        return None
 
     @requires_connection
     def get_log_bundle(self):
@@ -211,12 +200,19 @@ class VirtualCenter(ManagedObject):
             container=self.get_root_folder(self.si),
             type=[vim.VirtualApp],
             recursive=True)
-        vapp = None
-        for v in invtvw.view:
-            if name in v.name:
-                vapp = v
-                break
-        return Vapp(self.si, vapp) if vapp else None
+        for vapp in invtvw.view:
+            if name in vapp.name:
+                return Vapp(self.si, vapp)
+        return None
+
+    @requires_connection
+    def get_hosts(self):
+        vmgr = self.si.RetrieveContent().viewManager
+        invtvw = vmgr.CreateContainerView(
+            container=self.get_root_folder(self.si),
+            type=[vim.HostSystem],
+            recursive=True)
+        return [Host(self.si, host) for host in invtvw.view]
 
     @requires_connection
     def get_vms_by_regex(self, regex_list):
@@ -259,6 +255,30 @@ class VirtualCenter(ManagedObject):
                 if re.match(regex, folder.name):
                     all_folders.append(Folder(self.si, folder))
         return all_folders
+
+    @requires_connection
+    def get_datastores(self, dc_name=None, ds_type=None):
+        if dc_name:
+            ds_list = self.get_datacenter(dc_name).dc.datastore
+        else:
+            vmgr = self.si.RetrieveContent().viewManager
+            invtvw = vmgr.CreateContainerView(
+                container=self.get_root_folder(self.si),
+                type=[vim.Datastore],
+                recursive=True)
+            ds_list = [ds for ds in invtvw.view]
+
+        if ds_type:
+            from utils import DS_TYPE
+            ds_type = ds_type.upper()
+            if ds_type in DS_TYPE:
+                return [DataStore(self.si, ds) for ds in ds_list
+                        if ds.summary.type == ds_type]
+            else:
+                print "Invalid storage type: " + ds_type
+                return None
+        else:
+            return [DataStore(self.si, ds) for ds in ds_list]
 
 
 class Datacenter(ManagedObject):
@@ -305,6 +325,20 @@ class Datacenter(ManagedObject):
         dvs_task = self.dc.networkFolder.CreateDVS_Task(spec)
         task.WaitForTask(task=dvs_task, si=self.si)
         return self.get_dvs_by_name(spec.configSpec.name)
+
+    def get_datastores(self, ds_type=None):
+        ds_list = self.dc.datastore
+        if ds_type:
+            from utils import DS_TYPE
+            ds_type = ds_type.upper()
+            if ds_type in DS_TYPE:
+                return [DataStore(self.si, ds) for ds in ds_list
+                        if ds.summary.type == ds_type]
+            else:
+                print "Invalid storage type: " + ds_type
+                return None
+        else:
+            return [DataStore(self.si, ds) for ds in ds_list]
 
 
 class Cluster(ManagedObject):
@@ -562,8 +596,23 @@ class VM(ManagedObject):
         vmotion_task = self.vm.Relocate(spec=vm_relocate_spec)
         task.WaitForTask(task=vmotion_task, si=self.si)
 
+    def get_datastores(self):
+        return [DataStore(self.si, ds) for ds in self.vm.datastore]
+
+    def get_hostname(self):
+        return self.vm.guest.hostName
+
+    def get_size(self):
+        disks = self.vm.storage.perDatastoreUsage
+        size = 0L
+        for disk in disks:
+            size += disk.committed + disk.uncommitted
+        return size / 1024 / 1024 / 1024
+
 
 class DataStore(ManagedObject):
+    B2G = 1024*1024*1024
+
     def __init__(self, si, ds):
         if not isinstance(ds, vim.Datastore):
             raise TypeError("Not a vim.Datastore object")
@@ -572,6 +621,21 @@ class DataStore(ManagedObject):
 
     def name(self):
         return self.ds.name
+
+    def get_hosts(self):
+        # Host list connect this ds
+        return [Host(self.si, host) for host in self.ds.host]
+
+    def get_info(self):
+        return self.ds.summary
+
+    def get_freespace(self):
+        # GB
+        return self.get_info().freeSpace / self.B2G
+
+    def get_capacity(self):
+        # GB
+        return self.get_info().capacity / self.B2G
 
     @property
     def moid(self):

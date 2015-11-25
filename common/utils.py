@@ -17,6 +17,9 @@ RULES = ['httpClient', 'syslog', 'nfsClient', 'ntpClient',
 # Services on ESXi
 SERVICES = ['TSM-SSH', 'ntpd', 'snmpd']
 
+# Storage Type
+DS_TYPE = ['VMFS', 'NFS', 'VSAN']
+
 
 def init_ssl():
     import ssl
