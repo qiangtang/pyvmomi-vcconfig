@@ -202,22 +202,23 @@ def get_port_group_spec(pg_name, vlan_id):
 
 
 def add_nfs_to_host(vc, remote_host, remote_path, ds_name, target_hosts):
-    if vc.get_datastore_by_name(ds_name):
-        print 'The datastore named {} already exist.'.format(ds_name)
-    else:
-        ds_spec = vim.host.NasVolume.Specification()
-        ds_spec.localPath = ds_name
-        ds_spec.remoteHost = remote_host
-        ds_spec.remotePath = remote_path
-        ds_spec.accessMode = "readWrite"
-        hosts = get_host_list(target_hosts)
-        for host_name in hosts:
-            target_host = vc.get_host_by_name(host_name)
-            if target_host:
+    ds_spec = vim.host.NasVolume.Specification()
+    ds_spec.localPath = ds_name
+    ds_spec.remoteHost = remote_host
+    ds_spec.remotePath = remote_path
+    ds_spec.accessMode = "readWrite"
+    hosts = get_host_list(target_hosts)
+    for host_name in hosts:
+        target_host = vc.get_host_by_name(host_name)
+        if target_host:
+            ds = target_host.get_datastore_by_name(ds_name)
+            if ds is None:
                 target_host.add_nfs_datastore(ds_spec)
             else:
-                print 'Target host {} not exist in the current VC.'\
-                    .format(host_name)
+                print 'Datastore {} already in host {}'.format(ds_name, host_name)
+        else:
+            print 'Target host {} not exist in the current VC.'\
+                .format(host_name)
 
 
 def vmotion(vc, vm_name, dest_host_name, dest_datastore_name, folder=None):

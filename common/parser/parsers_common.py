@@ -321,7 +321,7 @@ def config_host_parser(subparsers):
 
 def add_nfs(args):
     vc = _get_vc()
-    ds_name = args.local_name
+    ds_name = args.ds_name
     remote_host = args.remote_host
     remote_path = args.remote_path
     target_hosts = args.target_hosts

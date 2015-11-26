@@ -409,6 +409,15 @@ class Host(ManagedObject):
     def name(self):
         return self.host_system.name
 
+    def get_datastore_by_name(self, name):
+        for ds in self.host_system.datastore:
+            if ds.name == name:
+                return DataStore(self.si, ds)
+        return None
+
+    def get_datastores(self):
+        return [DataStore(self.si, ds) for ds in self.host_system.datastore]
+
     def config_vmotion(self, nic_num=0):
         if not self.host_system.capability.vmotionSupported:
             print 'Host {} not support vMotion.'.format(self.name())
