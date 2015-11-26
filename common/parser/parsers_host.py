@@ -113,3 +113,32 @@ def maintenance_parser(subparsers):
         dest='action'
     )
     parser.set_defaults(func=maintenance)
+
+
+def config_vmotion(args):
+    vc = _get_vc()
+    operations.cfg_esxi_vmotion(vc, args.hosts, args.nic)
+
+
+def config_vmotion_parser(subparsers):
+    parser = subparsers.add_parser(
+        'host-vmotion',
+        help='Enable vMotion on target host.'
+    )
+    parser.add_argument(
+        '--host-name',
+        action='store',
+        required=True,
+        help='Target host list. Support single ip/fqdn or ip-range. '
+             'Separated by comma',
+        dest='hosts'
+    )
+    parser.add_argument(
+        '--nic-num',
+        action='store',
+        type=int,
+        help='[Optional] Virtual Nic number used for vMotion. 0 by default.',
+        default=0,
+        dest='nic'
+    )
+    parser.set_defaults(func=config_vmotion)

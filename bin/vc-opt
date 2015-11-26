@@ -30,6 +30,7 @@ def main():
     parsers_host.config_service_parser(subparsers)
     parsers_host.config_rule_parser(subparsers)
     parsers_host.maintenance_parser(subparsers)
+    parsers_host.config_vmotion_parser(subparsers)
 
     # VM action site
     parsers_vm.migrate_parser(subparsers)

@@ -114,7 +114,7 @@ class VirtualCenter(ManagedObject):
         return Datacenter(self.si, dc)
 
     @requires_connection
-    def get_datacenter(self, name):
+    def get_datacenter_by_name(self, name):
         """Returns a reference to datacenter in the root folder.
 
         @param name: name of the datacenter
@@ -206,6 +206,15 @@ class VirtualCenter(ManagedObject):
         return None
 
     @requires_connection
+    def get_datacenters(self):
+        vmgr = self.si.RetrieveContent().viewManager
+        invtvw = vmgr.CreateContainerView(
+            container=self.get_root_folder(self.si),
+            type=[vim.Datacenter],
+            recursive=True)
+        return [Datacenter(self.si, dc) for dc in invtvw.view]
+
+    @requires_connection
     def get_hosts(self):
         vmgr = self.si.RetrieveContent().viewManager
         invtvw = vmgr.CreateContainerView(
@@ -259,7 +268,7 @@ class VirtualCenter(ManagedObject):
     @requires_connection
     def get_datastores(self, dc_name=None, ds_type=None):
         if dc_name:
-            ds_list = self.get_datacenter(dc_name).dc.datastore
+            ds_list = self.get_datacenter_by_name(dc_name).dc.datastore
         else:
             vmgr = self.si.RetrieveContent().viewManager
             invtvw = vmgr.CreateContainerView(
@@ -289,6 +298,9 @@ class Datacenter(ManagedObject):
         self.dc = dc
         self.si = si
 
+    def name(self):
+        return self.dc.name
+
     def create_cluster(self, name, config=vim.cluster.ConfigSpecEx()):
         """Creates cluster.
 
@@ -301,25 +313,21 @@ class Datacenter(ManagedObject):
         return Cluster(self.si, c)
 
     def get_cluster(self, name):
-        vmgr = self.si.RetrieveContent().viewManager
-        invtvw = vmgr.CreateContainerView(
-            container=self.get_root_folder(self.si),
-            type=[vim.ClusterComputeResource],
-            recursive=True)
-        clusters = [c for c in invtvw.view if c.name == name]
-        return Cluster(self.si, clusters[0]) if len(clusters) > 0 else None
+        for cluster in self.get_clusters():
+            if cluster.name() == name:
+                return cluster
+        return None
 
-    def get_dvs_by_name(self, name=None):
+    def get_dvs_by_name(self, name):
         vmgr = self.si.RetrieveContent().viewManager
         invtvw = vmgr.CreateContainerView(
             container=self.get_root_folder(self.si),
             type=[vim.VmwareDistributedVirtualSwitch],
             recursive=True)
-        if name:
-            dvs = [dvs for dvs in invtvw.view if dvs.name == name]
-        else:
-            dvs = invtvw.view
-        return DistributedVirtualSwitch(self.si, dvs[0]) if dvs else None
+        for dvs in invtvw.view:
+            if dvs.name == name:
+                return DistributedVirtualSwitch(self.si, dvs)
+        return None
 
     def create_dvs(self, spec):
         dvs_task = self.dc.networkFolder.CreateDVS_Task(spec)
@@ -340,6 +348,11 @@ class Datacenter(ManagedObject):
         else:
             return [DataStore(self.si, ds) for ds in ds_list]
 
+    def get_clusters(self):
+        child_entitys = self.dc.hostFolder.childEntity
+        return [Cluster(self.si, cluster) for cluster in child_entitys
+                if isinstance(cluster, vim.ClusterComputeResource)]
+
 
 class Cluster(ManagedObject):
 
@@ -348,6 +361,9 @@ class Cluster(ManagedObject):
             raise TypeError("Not a vim.ClusterComputeResource object")
         self.si = si
         self.cluster = cluster
+
+    def name(self):
+        return self.cluster.name
 
     def add_host(self, hostConnectSpec):
         """Adds host to a cluster.
@@ -359,6 +375,9 @@ class Cluster(ManagedObject):
             spec=hostConnectSpec,
             asConnected=True)
         task.WaitForTask(task=hosttask, si=self.si)
+
+    def get_hosts(self):
+        return [Host(self.si, host) for host in self.cluster.host]
 
     def enable_drs(self, enable=True):
         spec = vim.cluster.ConfigSpec(
@@ -386,6 +405,31 @@ class Host(ManagedObject):
             raise TypeError("Not a vim.HostSystem object")
         self.si = si
         self.host_system = host_system
+
+    def name(self):
+        return self.host_system.name
+
+    def config_vmotion(self, nic_num=0):
+        if not self.host_system.capability.vmotionSupported:
+            print 'Host {} not support vMotion.'.format(self.name())
+            return
+        vmotion_manager = self.host_system.configManager.vmotionSystem
+        nic_list = vmotion_manager.netConfig.candidateVnic
+        if nic_list is None:
+            print 'No candidate virtual nic device found for vMotion.'
+            return
+        device = None
+        for nic in nic_list:
+            if nic.device == ('vmk' + str(nic_num)):
+                device = nic.device
+                break
+        if device:
+            print('Host {} enable vMotion on vnic {}.'.format(self.name(), device))
+            vmotion_manager.SelectVnic(device)
+        else:
+            cand_nic_num = nic_list[0].device.replace('vmk', '')
+            print 'Invalid candidate virtual nic number {} selected. ' \
+                  'Candidate nic number: {}'.format(nic_num, cand_nic_num)
 
     def enable_ssh(self, enable=True):
         service_manager = self.host_system.configManager.serviceSystem
@@ -415,6 +459,9 @@ class Host(ManagedObject):
             entity=self.host_system._moId, licenseKey=license_key)
 
     def add_nfs_datastore(self, ds_spec):
+        if not self.host_system.capability.nfsSupported:
+            print("Host {} not support nfs datastore.".format(self.name()))
+            return
         print 'Add NFS {}:{} to host {}.'.format(
             ds_spec.remoteHost, ds_spec.remotePath, self.host_system.name)
         self.host_system.configManager.datastoreSystem\

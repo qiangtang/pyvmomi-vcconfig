@@ -10,7 +10,7 @@ def get_vcenter(vc_ip, vc_user, vc_pwd):
 
 def get_datacenter(vc, dc_name):
     # Get DC info
-    dc = vc.get_datacenter(dc_name)
+    dc = vc.get_datacenter_by_name(dc_name)
     if dc is None:
         dc = vc.create_datacenter(dc_name)
     else:
@@ -118,6 +118,8 @@ def config_hosts(vc, services_str, ntp=None, licensekey=None):
             host.enable_ntp(ntp=ntp)
         if licensekey:
             host.add_license(license_key=licensekey)
+        # Config default vMotion network
+        host.config_vmotion()
 
 
 def create_dvs(vc, dc, dvs_name, nic_index=1, target_hosts_str=None,
@@ -250,5 +252,15 @@ def cfg_esxi_fw_rule(vc, hosts, rule, action):
         host = vc.get_host_by_name(host_name)
         if host:
             host.config_firewall(rule, action)
+        else:
+            print 'Host {} not exist in VC'.format(host_name)
+
+
+def cfg_esxi_vmotion(vc, hosts, nic_num=0):
+    host_list = get_host_list(hosts)
+    for host_name in host_list:
+        host = vc.get_host_by_name(host_name)
+        if host:
+            host.config_vmotion(nic_num)
         else:
             print 'Host {} not exist in VC'.format(host_name)
