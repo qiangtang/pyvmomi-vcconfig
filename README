@@ -16,6 +16,7 @@ Func Supported:
    1 Config service on ESXi.
    2 Config firewall rule on ESXi.
    3 Make ESXi enter/exit maintenance mode.
+   4 Config vMotion on ESXi
 
    VM:
    1 VM vMotion to spec host/datastore.
