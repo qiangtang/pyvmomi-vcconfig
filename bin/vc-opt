@@ -27,6 +27,7 @@ def main():
     parsers_common.add_nfs_parser(subparsers)
 
     # Host action site
+    parsers_host.config_autostart_parser(subparsers)
     parsers_host.config_service_parser(subparsers)
     parsers_host.config_rule_parser(subparsers)
     parsers_host.maintenance_parser(subparsers)

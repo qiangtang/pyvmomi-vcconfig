@@ -23,7 +23,7 @@ def config_service_parser(subparsers):
         help='Start/stop service on target host.'
     )
     parser.add_argument(
-        '--host-name',
+        '--host',
         action='store',
         required=True,
         help='Target host list. Support single ip/fqdn or ip-range. '
@@ -60,7 +60,7 @@ def config_rule_parser(subparsers):
         help='Enable/disable firewall rule on target host.'
     )
     parser.add_argument(
-        '--host-name',
+        '--host',
         action='store',
         required=True,
         help='Target host list. Support single ip/fqdn or ip-range. '
@@ -88,8 +88,10 @@ def config_rule_parser(subparsers):
 
 def maintenance(args):
     vc = _get_vc()
-    host = vc.get_host_by_name(args.host_name.strip())
-    host.maintenance(args.action)
+    hosts = operations.get_host_list(args.hosts)
+    for host_name in hosts:
+        host = vc.get_host_by_name(host_name)
+        host.maintenance(args.action)
 
 
 def maintenance_parser(subparsers):
@@ -101,8 +103,9 @@ def maintenance_parser(subparsers):
         '--host',
         action='store',
         required=True,
-        help='Name of host to enter/exit maintenance mode',
-        dest='host_name'
+        help='Target host list. Support single ip/fqdn or ip-range. '
+             'Separated by comma',
+        dest='hosts'
     )
     parser.add_argument(
         '--action',
@@ -126,7 +129,7 @@ def config_vmotion_parser(subparsers):
         help='Enable vMotion on target host.'
     )
     parser.add_argument(
-        '--host-name',
+        '--host',
         action='store',
         required=True,
         help='Target host list. Support single ip/fqdn or ip-range. '
@@ -142,3 +145,31 @@ def config_vmotion_parser(subparsers):
         dest='nic'
     )
     parser.set_defaults(func=config_vmotion)
+
+
+def config_autostart(args):
+    vc = _get_vc()
+    operations.cfg_autostart(vc, args.host, args.vms)
+
+
+def config_autostart_parser(subparsers):
+    parser = subparsers.add_parser(
+        'host-autostart',
+        help='Config auto start for VMs on the target host.'
+    )
+    parser.add_argument(
+        '--host',
+        action='store',
+        required=True,
+        help='Target host which the vms on',
+        dest='host'
+    )
+    parser.add_argument(
+        '--vm',
+        action='store',
+        required=True,
+        help='Name list of VM to enable auto start func. First position '
+             'with first priority. Separated by comma',
+        dest='vms'
+    )
+    parser.set_defaults(func=config_autostart)

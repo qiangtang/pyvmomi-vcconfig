@@ -298,7 +298,7 @@ def config_host_parser(subparsers):
     parser.add_argument(
         '--service',
         action='store',
-        help='[Optional] Services on hosts.E.g. ssh. Separated by comma.',
+        help='[Optional] Services list. E.g. ssh,vmotion. Separated by comma.',
         default=None,
         dest='services'
     )

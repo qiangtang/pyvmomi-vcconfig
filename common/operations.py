@@ -109,17 +109,19 @@ def config_hosts(vc, services_str, ntp=None, licensekey=None):
     services = services_str.strip().lower().split(',')
     all_hosts = vc.get_hosts()
     for host in all_hosts:
+        if ntp:
+            host.enable_ntp(ntp=ntp)
+        if licensekey:
+            host.add_license(license_key=licensekey)
         for service in services:
             service = service.strip()
             if service == 'ssh':
                 host.enable_ssh()
                 continue
-        if ntp:
-            host.enable_ntp(ntp=ntp)
-        if licensekey:
-            host.add_license(license_key=licensekey)
-        # Config default vMotion network
-        host.config_vmotion()
+            if service == 'vmotion':
+                # Config default vMotion network
+                host.config_vmotion()
+                continue
 
 
 def create_dvs(vc, dc, dvs_name, nic_index=1, target_hosts_str=None,
@@ -265,3 +267,9 @@ def cfg_esxi_vmotion(vc, hosts, nic_num=0):
             host.config_vmotion(nic_num)
         else:
             print 'Host {} not exist in VC'.format(host_name)
+
+
+def cfg_autostart(vc, host_name, vms):
+    vm_list = [vm.strip() for vm in vms.strip().split(',')]
+    host = vc.get_host_by_name(host_name)
+    host.config_autostart(vm_list)

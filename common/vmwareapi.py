@@ -418,6 +418,9 @@ class Host(ManagedObject):
     def get_datastores(self):
         return [DataStore(self.si, ds) for ds in self.host_system.datastore]
 
+    def get_vms(self):
+        return [VM(self.si, vm) for vm in self.host_system.vm]
+
     def config_vmotion(self, nic_num=0):
         if not self.host_system.capability.vmotionSupported:
             print 'Host {} not support vMotion.'.format(self.name())
@@ -519,6 +522,30 @@ class Host(ManagedObject):
             else:
                 print "Not support config rule {} on {} yet."\
                     .format(rule, self.host_system.name)
+
+    def config_autostart(self, vm_list):
+        as_manager = self.host_system.configManager.autoStartManager
+        as_config = vim.host.AutoStartManager.Config()
+        power_info_list = []
+        vms = self.get_vms()
+        vm_names = [vm.name() for vm in vms]
+        for vm_name in vm_list:
+            if vm_name not in vm_names:
+                print 'VM {} not on host {}.'.format(vm_name, self.name())
+                vm_list.remove(vm_name)
+        for vm in vms:
+            if vm.name() in vm_list:
+                power_info = vim.host.AutoStartManager.AutoPowerInfo()
+                power_info.key = vm.vm
+                power_info.startAction = 'powerOn'
+                power_info.stopAction = 'powerOff'
+                power_info.startDelay = -1
+                power_info.stopDelay = -1
+                power_info.startOrder = vm_list.index(vm.name()) + 1
+                power_info.waitForHeartbeat = vim.host.AutoStartManager.AutoPowerInfo.WaitHeartbeatSetting().systemDefault
+                power_info_list.append(power_info)
+        as_config.powerInfo = power_info_list
+        as_manager.ReconfigureAutostart(as_config)
 
     def maintenance(self, action='enter'):
         actions = ['enter', 'exit']
@@ -692,6 +719,9 @@ class DataStore(ManagedObject):
     def get_capacity(self):
         # GB
         return self.get_info().capacity / self.B2G
+
+    def get_vms(self):
+        return [VM(self.si, vm) for vm in self.ds.vm]
 
     @property
     def moid(self):
