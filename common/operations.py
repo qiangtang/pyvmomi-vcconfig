@@ -19,7 +19,7 @@ def get_datacenter(vc, dc_name):
 
 
 def create_cluster(dc, cluster_name, services_str=None):
-    cluster = dc.get_cluster(cluster_name)
+    cluster = dc.get_cluster_by_name(cluster_name)
     if cluster is None:
         print 'Create VC Cluster {}.'.format(cluster_name)
         cluster = dc.create_cluster(cluster_name)

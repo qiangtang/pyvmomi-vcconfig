@@ -307,15 +307,21 @@ class Datacenter(ManagedObject):
         @param name: name of the cluster
         @param config: vim.cluster.ConfigSpecEx
         """
-
-        hostFolder = self.dc.hostFolder
-        c = hostFolder.CreateClusterEx(name, config)
+        hostfd = self.dc.hostFolder
+        c = hostfd.CreateClusterEx(name, config)
         return Cluster(self.si, c)
 
-    def get_cluster(self, name):
+    def get_cluster_by_name(self, name):
         for cluster in self.get_clusters():
             if cluster.name() == name:
                 return cluster
+        return None
+
+    def get_folder_by_name(self, fd_name):
+        fds = self.get_folders(True)
+        for fd in fds:
+            if fd.name() == fd_name:
+                return fd
         return None
 
     def get_dvs_by_name(self, name):
@@ -352,6 +358,34 @@ class Datacenter(ManagedObject):
         child_entitys = self.dc.hostFolder.childEntity
         return [Cluster(self.si, cluster) for cluster in child_entitys
                 if isinstance(cluster, vim.ClusterComputeResource)]
+
+    def get_networks(self):
+        return [Network(self.si, net) for net in self.dc.network]
+
+    def get_folders(self, recursive=False):
+        child_entitys = self.dc.vmFolder.childEntity
+        fds = []
+        for fd in child_entitys:
+            if isinstance(fd, vim.Folder):
+                fds.append(Folder(self.si, fd))
+                if recursive:
+                    child_fds = [Folder(self.si, child_fd) for child_fd
+                                 in fd.childEntity if isinstance(child_fd, vim.Folder)]
+                    for child_fd in child_fds:
+                        fds.append(child_fd)
+                        fds.extend(child_fd.get_child_folders(recursive))
+        return fds
+
+    def get_vms(self, recursive=False):
+        child_entitys = self.dc.vmFolder.childEntity
+        vms = []
+        for vm in child_entitys:
+            if recursive and isinstance(vm, vim.Folder):
+                vms.extend(Folder(self.si, vm).get_vms())
+                continue
+            if isinstance(vm, vim.VirtualMachine):
+                vms.append(VM(self.si, vm))
+        return vms
 
 
 class Cluster(ManagedObject):
@@ -789,6 +823,31 @@ class Folder(ManagedObject):
     def destroy(self):
         destroy_task = self.folder.Destroy()
         task.WaitForTask(task=destroy_task, si=self.si)
+
+    def get_vms(self, recursive=False):
+        child_entitys = self.folder.childEntity
+        vms = []
+        for vm in child_entitys:
+            if recursive and isinstance(vm, vim.Folder):
+                vms.extend(Folder(self.si, vm).get_vms())
+                continue
+            if isinstance(vm, vim.VirtualMachine):
+                vms.append(VM(self.si, vm))
+        return vms
+
+    def get_child_folders(self, recursive=False):
+        child_entitys = self.folder.childEntity
+        fds = []
+        for fd in child_entitys:
+            if isinstance(fd, vim.Folder):
+                fds.append(Folder(self.si, fd))
+                if recursive:
+                    child_fds = [Folder(self.si, child_fd) for child_fd
+                                 in fd.childEntity if isinstance(child_fd, vim.Folder)]
+                    for child_fd in child_fds:
+                        fds.append(child_fd)
+                        fds.extend(child_fd.get_child_folders(recursive))
+        return fds
 
 
 class Vapp(ManagedObject):
