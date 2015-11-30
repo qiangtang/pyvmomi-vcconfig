@@ -542,7 +542,9 @@ class Host(ManagedObject):
                 power_info.startDelay = -1
                 power_info.stopDelay = -1
                 power_info.startOrder = vm_list.index(vm.name()) + 1
-                power_info.waitForHeartbeat = vim.host.AutoStartManager.AutoPowerInfo.WaitHeartbeatSetting().systemDefault
+                power_info.waitForHeartbeat =\
+                    vim.host.AutoStartManager.AutoPowerInfo\
+                        .WaitHeartbeatSetting().systemDefault
                 power_info_list.append(power_info)
         as_config.powerInfo = power_info_list
         as_manager.ReconfigureAutostart(as_config)
@@ -682,8 +684,8 @@ class VM(ManagedObject):
     def get_datastores(self):
         return [DataStore(self.si, ds) for ds in self.vm.datastore]
 
-    def get_hostname(self):
-        return self.vm.guest.hostName
+    def get_host(self):
+        return Host(self.si, self.vm.runtime.host)
 
     def get_size(self):
         disks = self.vm.storage.perDatastoreUsage
