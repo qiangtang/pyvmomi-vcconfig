@@ -557,7 +557,7 @@ class Host(ManagedObject):
                 .format(action, self.host_system.name)
             return
         print 'Host {} {} maintenance mode.'.format(self.host_system.name,
-                                                     action)
+                                                    action)
         if action == 'enter':
             main_task = self.host_system.EnterMaintenanceMode(0)
         else:
