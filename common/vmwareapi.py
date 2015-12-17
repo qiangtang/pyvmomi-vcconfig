@@ -174,6 +174,30 @@ class VirtualCenter(ManagedObject):
         return None
 
     @requires_connection
+    def get_vapp_by_name(self, name):
+        vmgr = self.si.RetrieveContent().viewManager
+        invtvw = vmgr.CreateContainerView(
+            container=self.get_root_folder(self.si),
+            type=[vim.VirtualApp],
+            recursive=True)
+        for vapp in invtvw.view:
+            if name in vapp.name:
+                return Vapp(self.si, vapp)
+        return None
+
+    @requires_connection
+    def get_rp_by_name(self, name):
+        vmgr = self.si.RetrieveContent().viewManager
+        invtvw = vmgr.CreateContainerView(
+            container=self.get_root_folder(self.si),
+            type=[vim.ResourcePool],
+            recursive=True)
+        for rp in invtvw.view:
+            if rp.summary.name == name:
+                return ResourcePool(self.si, rp)
+        return None
+
+    @requires_connection
     def get_log_bundle(self):
         def get_all_host_systems():
             vmgr = self.si.RetrieveContent().viewManager
@@ -194,18 +218,6 @@ class VirtualCenter(ManagedObject):
         return bundles
 
     @requires_connection
-    def get_vapp_by_name(self, name):
-        vmgr = self.si.RetrieveContent().viewManager
-        invtvw = vmgr.CreateContainerView(
-            container=self.get_root_folder(self.si),
-            type=[vim.VirtualApp],
-            recursive=True)
-        for vapp in invtvw.view:
-            if name in vapp.name:
-                return Vapp(self.si, vapp)
-        return None
-
-    @requires_connection
     def get_datacenters(self):
         vmgr = self.si.RetrieveContent().viewManager
         invtvw = vmgr.CreateContainerView(
@@ -224,7 +236,7 @@ class VirtualCenter(ManagedObject):
         return [Host(self.si, host) for host in invtvw.view]
 
     @requires_connection
-    def get_vms_by_regex(self, regex_list):
+    def get_vms_by_regex(self, regex_list, status=None):
         all_vms = []
         vmgr = self.si.RetrieveContent().viewManager
         invtvw = vmgr.CreateContainerView(
@@ -235,6 +247,12 @@ class VirtualCenter(ManagedObject):
             for vm in invtvw.view:
                 if re.match(regex, vm.name):
                     all_vms.append(VM(self.si, vm))
+        if status is not None:
+            import utils
+            if status in utils.VM_STATUS:
+                for vm in all_vms:
+                    if vm.get_state() != status:
+                        all_vms.remove(vm)
         return all_vms
 
     @requires_connection
@@ -669,23 +687,52 @@ class VM(ManagedObject):
             return
         print 'VM {} power {}.'.format(self.name(), action)
         if action == 'on':
-            power_task = self.vm.PowerOn()
+            self.poweron()
         else:
-            power_task = self.vm.PowerOff()
+            self.poweroff()
+
+    def poweron(self):
+        from utils import VM_STATUS
+        if self.get_state() == VM_STATUS[0]:
+            print 'VM {} already power on.'.format(self.name())
+            return
+        power_task = self.vm.PowerOn()
+        task.WaitForTask(task=power_task, si=self.si)
+
+    def poweroff(self):
+        from utils import VM_STATUS
+        if self.get_state() == VM_STATUS[1]:
+            print 'VM {} already power off.'.format(self.name())
+            return
+        power_task = self.vm.PowerOff()
         task.WaitForTask(task=power_task, si=self.si)
 
     def reset(self):
+        from utils import VM_STATUS
+        if self.get_state() != VM_STATUS[0]:
+            print 'VM {} not power on and can not reset.'.format(self.name())
+            return
         reset_task = self.vm.Reset()
         task.WaitForTask(task=reset_task, si=self.si)
 
     def rebootvm(self):
+        from utils import VM_STATUS
+        if self.get_state() != VM_STATUS[0]:
+            print 'VM {} not power on and can not reboot.'.format(self.name())
+            return
         self.vm.RebootGuest()
 
     def destroy(self):
+        from utils import VM_STATUS
+        if self.get_state() == VM_STATUS[0]:
+            self.poweroff()
         destroy_task = self.vm.Destroy()
         task.WaitForTask(task=destroy_task, si=self.si)
 
     def unregister(self):
+        from utils import VM_STATUS
+        if self.get_state() == VM_STATUS[0]:
+            self.poweroff()
         self.vm.Unregister()
 
     def clone(self, name):
@@ -702,7 +749,7 @@ class VM(ManagedObject):
         snapshot_task = self.vm.CreateSnapshot(snap_name, snap_name, True, True)
         task.WaitForTask(task=snapshot_task, si=self.si)
 
-    def migrate_host_datastore(self, dest_host, dest_datastore):
+    def migrate(self, dest_host, dest_datastore):
         # Support change both host and datastore
         vm_relocate_spec = vim.vm.RelocateSpec()
         vm_relocate_spec.host = dest_host.host_system
@@ -848,6 +895,20 @@ class Folder(ManagedObject):
                         fds.append(child_fd)
                         fds.extend(child_fd.get_child_folders(recursive))
         return fds
+
+
+class ResourcePool(ManagedObject):
+    def __init__(self, si, rp):
+        if not isinstance(rp, vim.ResourcePool):
+            raise TypeError("Not a vim.ResourcePool object")
+        self.si = si
+        self.rp = rp
+
+    def name(self):
+        return self.rp.summary.name
+
+    def get_vms(self):
+        return [VM(self.si, vm) for vm in self.rp.vm]
 
 
 class Vapp(ManagedObject):

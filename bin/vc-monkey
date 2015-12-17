@@ -1,0 +1,37 @@
+#!/usr/bin/python
+
+import ConfigParser
+import random
+import time
+
+from common import operations
+from common import utils
+from monkeys import vm_monkey
+
+
+def main():
+    utils.init_ssl()
+    cf = ConfigParser.ConfigParser()
+    cf.read(utils.SCHEDULAR_FILE_PATH)
+    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
+    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
+    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
+
+    loop_time = int(cf.get(utils.SCH_GLOBAL, 'loop'))
+    sleep_time = int(cf.get(utils.SCH_GLOBAL, 'sleep'))
+
+    for i in range(loop_time):
+        thread_list = []
+        vm_sch = vm_monkey.VMMonkey(vc, cf)
+        thread_list.extend(vm_sch.planner())
+        random.shuffle(thread_list)
+        for thread in thread_list:
+            thread.start()
+        for thread in thread_list:
+            thread.join()
+        time.sleep(sleep_time)
+
+
+if __name__ == '__main__':
+    main()

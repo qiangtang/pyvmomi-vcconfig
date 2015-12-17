@@ -236,7 +236,7 @@ def vmotion(vc, vm_name, dest_host_name, dest_datastore_name, folder=None):
     if dest_datastore is None:
         print 'Datastore {} not exist on VC.'.format(dest_datastore_name)
         return
-    vm.migrate_host_datastore(dest_host, dest_datastore)
+    vm.migrate(dest_host, dest_datastore)
 
 
 def cfg_esxi_service(vc, hosts, service, action):

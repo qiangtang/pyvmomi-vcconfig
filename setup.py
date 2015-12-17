@@ -5,8 +5,11 @@ setup(
     version='1.0.0',
     scripts=['bin/vc-cfg',
              'bin/vc-clean',
-             'bin/vc-opt'],
+             'bin/vc-opt',
+             'bin/vc-monkey'],
     packages=['common',
-              'common.parser'],
-    data_files=[('/usr/local/data', ['data/config.ini'])]
+              'common.parser',
+              'monkeys'],
+    data_files=[('/usr/local/data', ['data/config.ini',
+                                     'data/monkey.ini'])]
 )
