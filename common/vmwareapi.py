@@ -616,6 +616,30 @@ class Host(ManagedObject):
             main_task = self.host_system.ExitMaintenanceMode(0)
         task.WaitForTask(task=main_task, si=self.si)
 
+    def reboot(self):
+        reboot_task = self.host_system.RebootHost_Task(True)
+        task.WaitForTask(task=reboot_task, si=self.si)
+
+    def disconnect(self):
+        disconnect_task = self.host_system.DisconnectHost_Task()
+        task.WaitForTask(task=disconnect_task, si=self.si)
+
+    def reconnect(self, user=None, pwd=None, fingerprint=None):
+        cnxspec = vim.host.ConnectSpec()
+        cnxspec.hostName = self.name()
+        cnxspec.force = True
+        if user is not None:
+            cnxspec.userName = user
+        if pwd is not None:
+            cnxspec.password = pwd
+        if fingerprint is not None:
+            cnxspec.sslThumbprint = fingerprint
+        reconnectspec = vim.HostSystem.ReconnectSpec()
+        reconnectspec.syncState = True
+        reconnect_task = self.host_system.ReconnectHost_Task(cnxspec,
+                                                             reconnectspec)
+        task.WaitForTask(task=reconnect_task, si=self.si)
+
 
 class VM(ManagedObject):
 

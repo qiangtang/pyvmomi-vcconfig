@@ -13,10 +13,13 @@ class Monkey(object):
         sections = self.cf.sections()
         for section in sections:
             if section.startswith(self.cf_item):
-                regulars = utils.get_items(self.cf.get(section, 'regulars'))
+                targets = utils.get_items(self.cf.get(section, 'targets'))
                 actions = utils.get_items(self.cf.get(section, 'actions'))
-                number = int(self.cf.get(section, 'number'))
-                plan.extend(self.get_plan(regulars, actions, number))
+                if targets is None or actions is None:
+                    continue
+                number_str = self.cf.get(section, 'number')
+                number = len(targets) if '' == number_str else int(number_str)
+                plan.extend(self.get_plan(targets, actions, number))
         return plan
 
     def call_func(self, instance, name, args=(), kwargs=None):
