@@ -40,6 +40,7 @@ def main():
             thread.join()
         time.sleep(sleep_time)
         host_sch.restore()
+        vm_sch.restore()
 
 
 if __name__ == '__main__':

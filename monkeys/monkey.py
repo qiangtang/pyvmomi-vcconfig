@@ -7,6 +7,7 @@ class Monkey(object):
         self.cf_item = utils.SCH_PREFIX + item_type.lower()
         self.vc = vc
         self.cf = cf
+        self.restore_list = {}
 
     def planner(self):
         plan = []
@@ -29,3 +30,6 @@ class Monkey(object):
 
     def get_plan(self, regulars, actions, number):
         return []
+
+    def restore(self):
+        pass

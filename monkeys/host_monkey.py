@@ -1,4 +1,3 @@
-from common import utils
 from common import operations
 import monkey
 import random
@@ -9,7 +8,6 @@ class HostMonkey(monkey.Monkey):
 
     def __init__(self, vc, cf):
         monkey.Monkey.__init__(self, vc, cf, 'host')
-        self.restore_list = {}
 
     def get_plan(self, host_names, actions, number):
         threads = []
@@ -38,6 +36,14 @@ class HostMonkey(monkey.Monkey):
                                 args=(host, action, func_dict[action]))
 
     def restore(self):
+        thread_list = self.get_restore_list()
+        for thread in thread_list:
+            thread.start()
+        for thread in thread_list:
+            thread.join()
+        self.restore_list.clear()
+
+    def get_restore_list(self):
         thread_list = []
         for action in self.restore_list.keys():
             if action == 'maintenance':
@@ -51,8 +57,4 @@ class HostMonkey(monkey.Monkey):
                     thread_list.append(
                         threading.Thread(target=self.call_func,
                                          args=(host, 'reconnect', ())))
-        for thread in thread_list:
-            thread.start()
-        for thread in thread_list:
-            thread.join()
-        self.restore_list.clear()
+        return thread_list

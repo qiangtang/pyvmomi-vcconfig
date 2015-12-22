@@ -773,6 +773,9 @@ class VM(ManagedObject):
         snapshot_task = self.vm.CreateSnapshot(snap_name, snap_name, True, True)
         task.WaitForTask(task=snapshot_task, si=self.si)
 
+    def remove_snapshots(self):
+        self.vm.RemoveAllSnapshots()
+
     def migrate(self, dest_host, dest_datastore):
         # Support change both host and datastore
         vm_relocate_spec = vim.vm.RelocateSpec()
@@ -787,12 +790,14 @@ class VM(ManagedObject):
         task.WaitForTask(task=vmotion_task, si=self.si)
 
     def get_datastores(self):
+        self.vm.RefreshStorageInfo()
         return [DataStore(self.si, ds) for ds in self.vm.datastore]
 
     def get_host(self):
         return Host(self.si, self.vm.runtime.host)
 
     def get_size(self):
+        self.vm.RefreshStorageInfo()
         disks = self.vm.storage.perDatastoreUsage
         size = 0L
         for disk in disks:
