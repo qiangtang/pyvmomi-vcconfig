@@ -30,6 +30,9 @@ class Monkey(object):
             kwargs = {}
         return getattr(instance, name)(*args, **kwargs)
 
+    def get_plan(self, policy, regulars, actions, number):
+        return []
+
     def policy_threads(self, policy, target_list, actions, number):
         threads = []
         len_targets = len(target_list)
@@ -47,9 +50,6 @@ class Monkey(object):
                 action = random.choice(actions)
                 threads.append(self._get_thread(target, action))
         return threads
-
-    def get_plan(self, policy, regulars, actions, number):
-        return []
 
     def _get_thread(self, target, action):
         return None

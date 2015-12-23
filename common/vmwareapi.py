@@ -594,9 +594,8 @@ class Host(ManagedObject):
                 power_info.startDelay = -1
                 power_info.stopDelay = -1
                 power_info.startOrder = vm_list.index(vm.name()) + 1
-                power_info.waitForHeartbeat =\
-                    vim.host.AutoStartManager.AutoPowerInfo\
-                        .WaitHeartbeatSetting().systemDefault
+                power_info.waitForHeartbeat = vim.host.AutoStartManager\
+                    .AutoPowerInfo.WaitHeartbeatSetting().systemDefault
                 power_info_list.append(power_info)
         as_config.powerInfo = power_info_list
         as_manager.ReconfigureAutostart(as_config)
@@ -614,7 +613,7 @@ class Host(ManagedObject):
             main_task = self.host_system.EnterMaintenanceMode(0)
         else:
             main_task = self.host_system.ExitMaintenanceMode(0)
-        task.WaitForTask(task=main_task, si=self.si)
+        task.WaitForTask(task=main_task, si=self.si, raiseOnError=False)
 
     def reboot(self):
         print 'Reboot host {}'.format(self.name())
@@ -776,7 +775,7 @@ class VM(ManagedObject):
                                       customization=None)
         print 'Clone vm {} from {}'.format(name, self.name())
         clone_task = self.vm.Clone(self.vm.parent, name, clone_spec)
-        task.WaitForTask(task=clone_task, si=self.si)
+        task.WaitForTask(task=clone_task, si=self.si, raiseOnError=False)
 
     def snapshot(self, snap_name):
         print 'Take snapshot {} on {}'.format(snap_name, self.name())
