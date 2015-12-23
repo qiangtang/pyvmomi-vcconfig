@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import argparse
 import ConfigParser
 import logging
 from common import operations
@@ -10,9 +10,18 @@ LOG = logging.getLogger(__name__)
 
 def main():
     utils.init_ssl()
-
+    parser = argparse.ArgumentParser(description='VC One Cli Config Tool')
+    parser.add_argument(
+        '-p',
+        '--path',
+        action='store',
+        help='Path of vc config file, Def Path {}'.format(utils.CONFIG_FILE_PATH),
+        dest='path',
+        default=utils.CONFIG_FILE_PATH,
+    )
+    args = parser.parse_args()
     cf = ConfigParser.ConfigParser()
-    cf.read(utils.CONFIG_FILE_PATH)
+    cf.read(args.path)
 
     vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
     vc_user = cf.get(utils.VC_SECTION, 'vc_user')

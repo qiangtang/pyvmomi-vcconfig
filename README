@@ -50,6 +50,8 @@ For vc-cfg: One step tool for vc config
    Run by default: vc-cfg
      --  Update the /usr/local/data/config.ini file
      --  This will config your vc as data defined in the config.ini file
+   Run with specific cfg path: vc-cfg -p <cfg_path>
+     --  As vc-cfg -h
 
 
 For vc-clean:

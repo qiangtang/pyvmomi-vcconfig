@@ -17,7 +17,7 @@ def main():
         '-p',
         '--path',
         action='store',
-        help='Path of monkey config file',
+        help='Path of monkey config file. Def Path {}'.format(utils.SCHEDULAR_FILE_PATH),
         dest='path',
         default=utils.SCHEDULAR_FILE_PATH,
     )
