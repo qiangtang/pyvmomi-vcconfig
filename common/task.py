@@ -113,7 +113,7 @@ def WaitForTask(task,
         if raiseOnError:
             raise task.info.error
         else:
-            print "Task reported error: " + str(task.info.error)
+            print "Task reported error: " + str(task.info.error.msg)
     else:
         progressUpdater.Update('completed')
     return state

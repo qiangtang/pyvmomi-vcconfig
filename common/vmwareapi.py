@@ -617,10 +617,12 @@ class Host(ManagedObject):
         task.WaitForTask(task=main_task, si=self.si)
 
     def reboot(self):
+        print 'Reboot host {}'.format(self.name())
         reboot_task = self.host_system.RebootHost_Task(True)
         task.WaitForTask(task=reboot_task, si=self.si)
 
     def disconnect(self):
+        print 'Disconnect host {} from vc cluster'.format(self.name())
         disconnect_task = self.host_system.DisconnectHost_Task()
         task.WaitForTask(task=disconnect_task, si=self.si)
 
@@ -636,6 +638,7 @@ class Host(ManagedObject):
             cnxspec.sslThumbprint = fingerprint
         reconnectspec = vim.HostSystem.ReconnectSpec()
         reconnectspec.syncState = True
+        print 'Reconnect host {}'.format(self.name())
         reconnect_task = self.host_system.ReconnectHost_Task(cnxspec,
                                                              reconnectspec)
         task.WaitForTask(task=reconnect_task, si=self.si)
@@ -709,7 +712,6 @@ class VM(ManagedObject):
         if action not in actions:
             print 'Action {} not support on vm {}'.format(action, self.name())
             return
-        print 'VM {} power {}.'.format(self.name(), action)
         if action == 'on':
             self.poweron()
         else:
@@ -720,6 +722,7 @@ class VM(ManagedObject):
         if self.get_state() == VM_STATUS[0]:
             print 'VM {} already power on.'.format(self.name())
             return
+        print 'Power on vm {}'.format(self.name())
         power_task = self.vm.PowerOn()
         task.WaitForTask(task=power_task, si=self.si)
 
@@ -728,6 +731,7 @@ class VM(ManagedObject):
         if self.get_state() == VM_STATUS[1]:
             print 'VM {} already power off.'.format(self.name())
             return
+        print 'Power off vm {}'.format(self.name())
         power_task = self.vm.PowerOff()
         task.WaitForTask(task=power_task, si=self.si)
 
@@ -736,6 +740,7 @@ class VM(ManagedObject):
         if self.get_state() != VM_STATUS[0]:
             print 'VM {} not power on and can not reset.'.format(self.name())
             return
+        print 'Reset vm {}'.format(self.name())
         reset_task = self.vm.Reset()
         task.WaitForTask(task=reset_task, si=self.si)
 
@@ -744,19 +749,22 @@ class VM(ManagedObject):
         if self.get_state() != VM_STATUS[0]:
             print 'VM {} not power on and can not reboot.'.format(self.name())
             return
+        print 'Reboot vm {}'.format(self.name())
         self.vm.RebootGuest()
 
     def destroy(self):
         from utils import VM_STATUS
         if self.get_state() == VM_STATUS[0]:
             self.poweroff()
+        print 'Destroy vm {}'.format(self.name())
         destroy_task = self.vm.Destroy()
-        task.WaitForTask(task=destroy_task, si=self.si)
+        task.WaitForTask(task=destroy_task, si=self.si, raiseOnError=False)
 
     def unregister(self):
         from utils import VM_STATUS
         if self.get_state() == VM_STATUS[0]:
             self.poweroff()
+        print 'Unregister vm {} from inventory'.format(self.name())
         self.vm.Unregister()
 
     def clone(self, name):
@@ -766,14 +774,17 @@ class VM(ManagedObject):
                                       template=False,
                                       location=relocate_spec,
                                       customization=None)
+        print 'Clone vm {} from {}'.format(name, self.name())
         clone_task = self.vm.Clone(self.vm.parent, name, clone_spec)
         task.WaitForTask(task=clone_task, si=self.si)
 
     def snapshot(self, snap_name):
+        print 'Take snapshot {} on {}'.format(snap_name, self.name())
         snapshot_task = self.vm.CreateSnapshot(snap_name, snap_name, True, True)
-        task.WaitForTask(task=snapshot_task, si=self.si)
+        task.WaitForTask(task=snapshot_task, si=self.si, raiseOnError=False)
 
     def remove_snapshots(self):
+        print 'Remove all snapshots on {}'.format(self.name())
         self.vm.RemoveAllSnapshots()
 
     def migrate(self, dest_host, dest_datastore):
@@ -787,7 +798,7 @@ class VM(ManagedObject):
                     dest_datastore.ds.name,
                     dest_host.host_system.name)
         vmotion_task = self.vm.Relocate(spec=vm_relocate_spec)
-        task.WaitForTask(task=vmotion_task, si=self.si)
+        task.WaitForTask(task=vmotion_task, si=self.si, raiseOnError=False)
 
     def get_datastores(self):
         self.vm.RefreshStorageInfo()

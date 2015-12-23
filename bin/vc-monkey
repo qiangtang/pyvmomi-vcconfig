@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import argparse
 import ConfigParser
 import random
 import time
@@ -12,18 +12,31 @@ from monkeys import host_monkey
 
 def main():
     utils.init_ssl()
+    parser = argparse.ArgumentParser(description='Random actor')
+    parser.add_argument(
+        '-p',
+        '--path',
+        action='store',
+        help='Path of monkey config file',
+        dest='path',
+        default=utils.SCHEDULAR_FILE_PATH,
+    )
+    args = parser.parse_args()
+
     cf = ConfigParser.ConfigParser()
-    cf.read(utils.SCHEDULAR_FILE_PATH)
+    cf.read(args.path)
     vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
     vc_user = cf.get(utils.VC_SECTION, 'vc_user')
     vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
     vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
     loop = cf.get(utils.SCH_GLOBAL, 'loop')
-    sleep = cf.get(utils.SCH_GLOBAL, 'sleep')
+    loop_sleep = cf.get(utils.SCH_GLOBAL, 'loop_sleep')
+    thread_sleep = cf.get(utils.SCH_GLOBAL, 'thread_sleep')
 
     loop_time = 1 if '' == loop else int(loop)
-    sleep_time = 0 if '' == sleep else int(sleep)
+    sleep_time = 0 if '' == loop_sleep else int(loop_sleep)
+    thread_sleep = 0 if '' == thread_sleep else int(thread_sleep)
 
     for i in range(loop_time):
         thread_list = []
@@ -36,6 +49,7 @@ def main():
         random.shuffle(thread_list)
         for thread in thread_list:
             thread.start()
+            time.sleep(thread_sleep)
         for thread in thread_list:
             thread.join()
         time.sleep(sleep_time)

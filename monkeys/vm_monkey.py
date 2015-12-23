@@ -9,15 +9,11 @@ class VMMonkey(monkey.Monkey):
     def __init__(self, vc, cf):
         monkey.Monkey.__init__(self, vc, cf, 'vm')
 
-    def get_plan(self, regulars, actions, number):
-        threads = []
+    def get_plan(self, policy, regulars, actions, number):
         vm_list = self.vc.get_vms_by_regex(regulars)
         if len(vm_list) < number:
             number = len(vm_list)
-        target_list = random.sample(vm_list, number)
-        for vm in target_list:
-            action = random.choice(actions)
-            threads.append(self._get_thread(vm, action))
+        threads = self.policy_threads(policy, vm_list, actions, number)
         return threads
 
     def _get_thread(self, vm, action):

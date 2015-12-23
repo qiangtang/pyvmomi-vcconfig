@@ -1,6 +1,5 @@
 from common import operations
 import monkey
-import random
 import threading
 
 
@@ -9,8 +8,7 @@ class HostMonkey(monkey.Monkey):
     def __init__(self, vc, cf):
         monkey.Monkey.__init__(self, vc, cf, 'host')
 
-    def get_plan(self, host_names, actions, number):
-        threads = []
+    def get_plan(self, policy, host_names, actions, number):
         hosts = []
         for item in host_names:
             hosts.extend(operations.get_host_list(item))
@@ -18,10 +16,7 @@ class HostMonkey(monkey.Monkey):
         host_list = [host for host in all_hosts if host.name() in hosts]
         if len(host_list) < number:
             number = len(host_list)
-        target_list = random.sample(host_list, number)
-        for host in target_list:
-            action = random.choice(actions)
-            threads.append(self._get_thread(host, action))
+        threads = self.policy_threads(policy, host_list, actions, number)
         return threads
 
     def _get_thread(self, host, action):
