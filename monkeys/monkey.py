@@ -34,7 +34,6 @@ class Monkey(object):
         return []
 
     def policy_threads(self, policy, target_list, actions, number):
-        threads = []
         len_targets = len(target_list)
         if number > len_targets:
             number = len_targets
@@ -42,14 +41,11 @@ class Monkey(object):
         random.shuffle(actions)
         if policy == 'action_base':
             len_act = len(actions)
-            for i in range(len(targets)):
-                threads.append(self._get_thread(targets[i],
-                                                actions[i % len_act]))
+            return [self._get_thread(targets[i], actions[i % len_act])
+                    for i in range(len(targets))]
         else:
-            for target in targets:
-                action = random.choice(actions)
-                threads.append(self._get_thread(target, action))
-        return threads
+            return [self._get_thread(target, random.choice(actions))
+                    for target in targets]
 
     def _get_thread(self, target, action):
         return None

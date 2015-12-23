@@ -59,29 +59,20 @@ class VMMonkey(monkey.Monkey):
 
     def get_restore_list(self):
         thread_list = []
+        restore_dist = {
+            'clone': 'destroy',
+            'poweron': 'poweroff',
+            'poweroff': 'poweron',
+            'snapshot': 'remove_snapshots'
+        }
         for action in self.restore_list.keys():
-            if action == 'snapshot':
-                for vm in self.restore_list[action]:
-                    thread_list.append(
-                        threading.Thread(target=self.call_func,
-                                         args=(vm, 'remove_snapshots', ())))
-                continue
             if action == 'clone':
-                for vm_name in self.restore_list[action]:
-                    vm = self.vc.get_vm_by_name(vm_name)
-                    thread_list.append(
-                        threading.Thread(target=self.call_func,
-                                         args=(vm, 'destroy', ())))
-                continue
-            if action == 'poweron':
-                for vm in self.restore_list[action]:
-                    thread_list.append(
-                        threading.Thread(target=self.call_func,
-                                         args=(vm, 'poweroff', ())))
-                continue
-            if action == 'poweroff':
-                for vm in self.restore_list[action]:
-                    thread_list.append(
-                        threading.Thread(target=self.call_func,
-                                         args=(vm, 'poweron', ())))
+                vms = [self.vc.get_vm_by_name(vm_name)
+                       for vm_name in self.restore_list[action]]
+            else:
+                vms = self.restore_list[action]
+            threads = [threading.Thread(target=self.call_func,
+                                        args=(vm, restore_dist[action], ()))
+                       for vm in vms]
+            thread_list.extend(threads)
         return thread_list
