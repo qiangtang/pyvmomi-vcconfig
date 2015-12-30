@@ -44,7 +44,7 @@ class VMMonkey(monkey.Monkey):
                 self.restore_list[action] = []
             if action == 'snapshot' or action == 'poweron' or action == 'poweroff':
                 self.restore_list[action].append(vm)
-            else:
+            elif action == 'clone':
                 self.restore_list[action].append(vm.name() + '_clone_' + randstr)
         return threading.Thread(target=self.call_func,
                                 args=(vm, action, func_dict[action]))

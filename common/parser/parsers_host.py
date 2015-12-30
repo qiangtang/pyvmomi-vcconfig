@@ -12,6 +12,86 @@ def _get_vc():
     return operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
 
+def config_host(args):
+    vc = _get_vc()
+    operations.config_hosts(vc, args.services, args.ntp, args.license)
+
+
+def config_host_parser(subparsers):
+    parser = subparsers.add_parser(
+        'host-config',
+        help='Config services on all hosts in VC.'
+    )
+    parser.add_argument(
+        '--service',
+        action='store',
+        help='[Optional] Services list. E.g. ssh,vmotion. Separated by comma.',
+        default=None,
+        dest='services'
+    )
+    parser.add_argument(
+        '--ntp',
+        action='store',
+        help='[Optional] Ntp config on hosts. Separated by comma.',
+        default=None,
+        dest='ntp'
+    )
+    parser.add_argument(
+        '--license',
+        action='store',
+        help='[Optional] License key to be assigned to hosts.',
+        default=None,
+        dest='license'
+    )
+    parser.set_defaults(func=config_host)
+
+
+def add_nfs(args):
+    vc = _get_vc()
+    ds_name = args.ds_name
+    remote_host = args.remote_host
+    remote_path = args.remote_path
+    target_hosts = args.target_hosts
+    operations.add_nfs_to_host(vc, remote_host, remote_path, ds_name,
+                               target_hosts)
+
+
+def add_nfs_parser(subparsers):
+    parser = subparsers.add_parser(
+        'host-nfs',
+        help='Mount nfs datastore to target hosts.'
+    )
+    parser.add_argument(
+        '--ds-name',
+        action='store',
+        required=True,
+        help='Local name of nfs datastore.',
+        dest='ds_name'
+    )
+    parser.add_argument(
+        '--remote-host',
+        action='store',
+        required=True,
+        help='Remote host IP which the nfs on.',
+        dest='remote_host'
+    )
+    parser.add_argument(
+        '--remote-path',
+        action='store',
+        required=True,
+        help='Remote folder path of the nfs.',
+        dest='remote_path'
+    )
+    parser.add_argument(
+        '--host',
+        action='store',
+        required=True,
+        help='Target hosts the nfs mounted. Separated by comma.',
+        dest='target_hosts'
+    )
+    parser.set_defaults(func=add_nfs)
+
+
 def config_service(args):
     vc = _get_vc()
     operations.cfg_esxi_service(vc, args.hosts, args.service, args.action)
@@ -173,3 +253,30 @@ def config_autostart_parser(subparsers):
         dest='vms'
     )
     parser.set_defaults(func=config_autostart)
+
+
+def remove_datastore(args):
+    vc = _get_vc()
+    operations.remove_datastore(vc, args.host, args.dss)
+
+
+def remove_datastore_parser(subparsers):
+    parser = subparsers.add_parser(
+        'host-rmds',
+        help='Remove datastore from the target host.'
+    )
+    parser.add_argument(
+        '--host',
+        action='store',
+        required=True,
+        help='Target host name',
+        dest='host'
+    )
+    parser.add_argument(
+        '--ds',
+        action='store',
+        required=True,
+        help='Name list of datastores to be removed. Separated by comma',
+        dest='dss'
+    )
+    parser.set_defaults(func=remove_datastore)

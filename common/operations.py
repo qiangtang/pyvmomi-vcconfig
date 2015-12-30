@@ -2,6 +2,7 @@ import commands
 import re
 import vmwareapi
 from pyVmomi import vim
+import utils
 
 
 def get_vcenter(vc_ip, vc_user, vc_pwd):
@@ -273,3 +274,18 @@ def cfg_autostart(vc, host_name, vms):
     vm_list = [vm.strip() for vm in vms.strip().split(',')]
     host = vc.get_host_by_name(host_name)
     host.config_autostart(vm_list)
+
+
+def remove_datastore(vc, host_name, datastores):
+    host = vc.get_host_by_name(host_name)
+    if host is None:
+        print 'Host {} not exist in VC'.format(host_name)
+        return
+    dss = utils.get_items(datastores)
+    dss_names = [ds.name() for ds in host.get_datastores()]
+    for ds_name in dss:
+        if ds_name not in dss_names:
+            print 'Datastore {} not on host {}'.format(ds_name, host_name)
+        else:
+            ds = host.get_datastore_by_name(ds_name)
+            host.remove_datastore(ds)

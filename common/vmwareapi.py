@@ -470,6 +470,11 @@ class Host(ManagedObject):
     def get_datastores(self):
         return [DataStore(self.si, ds) for ds in self.host_system.datastore]
 
+    def remove_datastore(self, ds):
+        print 'Remove datastore {} from host {}'.format(ds.name(), self.name())
+        self.host_system.configManager.datastoreSystem\
+            .RemoveDatastore(ds.ds)
+
     def get_vms(self):
         return [VM(self.si, vm) for vm in self.host_system.vm]
 
