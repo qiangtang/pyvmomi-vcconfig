@@ -358,6 +358,14 @@ class Datacenter(ManagedObject):
         task.WaitForTask(task=dvs_task, si=self.si)
         return self.get_dvs_by_name(spec.configSpec.name)
 
+    def get_datastore_by_name(self, name):
+        dss = self.get_datastores()
+        if dss:
+            for ds in dss:
+                if ds.name() == name:
+                    return ds
+        return None
+
     def get_datastores(self, ds_type=None):
         ds_list = self.dc.datastore
         if ds_type:
@@ -834,7 +842,7 @@ class DataStore(ManagedObject):
 
     def get_hosts(self):
         # Host list connect this ds
-        return [Host(self.si, host) for host in self.ds.host]
+        return [Host(self.si, host.key) for host in self.ds.host]
 
     def get_info(self):
         return self.ds.summary

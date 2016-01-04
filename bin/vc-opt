@@ -20,6 +20,7 @@ def main():
     parsers_common.add_dvs_parser(subparsers)
     parsers_common.add_cluster_parser(subparsers)
     parsers_common.add_host_parser(subparsers)
+    parsers_common.remove_datastore_parser(subparsers)
 
     # Host action site
     parsers_host.add_nfs_parser(subparsers)
@@ -40,6 +41,7 @@ def main():
     parsers_vm.destroy_parser(subparsers)
     parsers_vm.unregister_parser(subparsers)
     parsers_vm.clone_parser(subparsers)
+    parsers_vm.path_parser(subparsers)
 
     args = parser.parse_args()
     args.func(args)

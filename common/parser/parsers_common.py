@@ -283,3 +283,30 @@ def add_host_parser(subparsers):
         dest='host_pwd'
     )
     parser.set_defaults(func=add_host)
+
+
+def remove_datastore(args):
+    vc = _get_vc()
+    operations.remove_dc_datastore(vc, args.dc, args.dss)
+
+
+def remove_datastore_parser(subparsers):
+    parser = subparsers.add_parser(
+        'remove-ds',
+        help='Remove datastore from the target data center.'
+    )
+    parser.add_argument(
+        '--dc',
+        action='store',
+        required=True,
+        help='Target data center name',
+        dest='dc'
+    )
+    parser.add_argument(
+        '--ds',
+        action='store',
+        required=True,
+        help='Name list of datastores to be removed. Separated by comma.',
+        dest='dss'
+    )
+    parser.set_defaults(func=remove_datastore)

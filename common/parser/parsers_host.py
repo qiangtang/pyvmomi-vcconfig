@@ -257,7 +257,7 @@ def config_autostart_parser(subparsers):
 
 def remove_datastore(args):
     vc = _get_vc()
-    operations.remove_datastore(vc, args.host, args.dss)
+    operations.remove_host_datastore(vc, args.host, args.dss)
 
 
 def remove_datastore_parser(subparsers):

@@ -300,3 +300,41 @@ def clone_parser(subparsers):
         dest='src_folder'
     )
     parser.set_defaults(func=clone)
+
+
+def path(args):
+    vc = _get_vc()
+    vm = vc.get_vm_by_name(args.vm_name.strip(), args.src_folder)
+    if vm:
+        host_name = vm.get_host().name()
+        path_str = vm.vm.config.files.logDirectory
+        path_str = path_str.replace(' ', '').replace('[', '/').replace(']', '/')
+        vm_path = '{}:/vmfs/volumes{}'.format(host_name, path_str)
+        print vm_path
+        exit(0)
+    else:
+        print 'VM {} not exist on vc'.format(args.vm_name)
+        exit(1)
+
+
+def path_parser(subparsers):
+    parser = subparsers.add_parser(
+        'vm-path',
+        help='Get the vm folder path on ESXi. Return as <host>:/<vm_path>'
+    )
+    parser.add_argument(
+        '--vm',
+        action='store',
+        required=True,
+        help='Name of target VM.',
+        dest='vm_name'
+    )
+    parser.add_argument(
+        '--src-folder',
+        action='store',
+        help='[Optional] Folder name where the target vm inside on VC. '
+             'Find from root folder by default.',
+        default=None,
+        dest='src_folder'
+    )
+    parser.set_defaults(func=path)

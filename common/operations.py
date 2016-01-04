@@ -276,7 +276,7 @@ def cfg_autostart(vc, host_name, vms):
     host.config_autostart(vm_list)
 
 
-def remove_datastore(vc, host_name, datastores):
+def remove_host_datastore(vc, host_name, datastores):
     host = vc.get_host_by_name(host_name)
     if host is None:
         print 'Host {} not exist in VC'.format(host_name)
@@ -288,4 +288,18 @@ def remove_datastore(vc, host_name, datastores):
             print 'Datastore {} not on host {}'.format(ds_name, host_name)
         else:
             ds = host.get_datastore_by_name(ds_name)
+            host.remove_datastore(ds)
+
+
+def remove_dc_datastore(vc, dc_name, datastores):
+    dc = vc.get_datacenter_by_name(dc_name)
+    if dc is None:
+        print 'Data Center {} not found on VC'.format(dc_name)
+        return
+    target_names = utils.get_items(datastores)
+    ds_names = [ds.name() for ds in dc.get_datastores()]
+    target_names = [ds_name for ds_name in target_names if ds_name in ds_names]
+    for ds_name in target_names:
+        ds = dc.get_datastore_by_name(ds_name)
+        for host in ds.get_hosts():
             host.remove_datastore(ds)
