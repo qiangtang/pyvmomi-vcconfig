@@ -22,6 +22,7 @@ def main():
     args = parser.parse_args()
     cf = ConfigParser.ConfigParser()
     cf.read(args.path)
+    sections = cf.sections()
 
     vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
     vc_user = cf.get(utils.VC_SECTION, 'vc_user')
@@ -32,25 +33,26 @@ def main():
     dc_name = cf.get(utils.DC_SECTION, 'dc')
     dc = operations.get_datacenter(vc, dc_name)
 
-    # Add hosts to cluster
-    host_user = cf.get(utils.HOST_SECTION, 'user')
-    host_pwd = cf.get(utils.HOST_SECTION, 'pwd')
-    sections = cf.sections()
-    for section in sections:
-        if section.startswith(utils.CLUSTER_SECTION_PREFIX):
-            cluster_name = cf.get(section, 'name')
-            services = cf.get(section, 'services')
-            host_names = cf.get(section, 'host_add_list')
+    if dc:
+        # Add hosts to cluster
+        host_user = cf.get(utils.HOST_SECTION, 'user')
+        host_pwd = cf.get(utils.HOST_SECTION, 'pwd')
+        for section in sections:
+            if section.startswith(utils.CLUSTER_SECTION_PREFIX):
+                cluster_name = cf.get(section, 'name')
+                services = cf.get(section, 'services')
+                host_names = cf.get(section, 'host_add_list')
 
-            cluster = operations.create_cluster(dc, cluster_name, services)
-            operations.add_hosts_to_cluster(vc, cluster, host_user, host_pwd,
-                                            host_names)
+                cluster = operations.create_cluster(dc, cluster_name, services)
+                operations.add_hosts_to_cluster(vc, cluster, host_user, host_pwd,
+                                                host_names)
 
     # Config all hosts
     host_ntp = cf.get(utils.HOST_SECTION, 'ntp')
     host_licensekey = cf.get(utils.HOST_SECTION, 'license')
     services = cf.get(utils.HOST_SECTION, 'services')
-    operations.config_hosts(vc, services, host_ntp, host_licensekey)
+    rules = cf.get(utils.HOST_SECTION, 'firewall')
+    operations.config_hosts(vc, services, host_ntp, host_licensekey, rules)
 
     # Create Dvs with port group config
     for section in sections:

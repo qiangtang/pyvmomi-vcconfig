@@ -105,9 +105,10 @@ def get_host_list(host_names):
     return host_names
 
 
-def config_hosts(vc, services_str, ntp=None, licensekey=None):
+def config_hosts(vc, services_str, ntp=None, licensekey=None, fw_rule=None):
     # Config All Hosts
-    services = services_str.strip().lower().split(',')
+    services = utils.get_items(services_str)
+    rules = utils.get_items(fw_rule)
     all_hosts = vc.get_hosts()
     for host in all_hosts:
         if ntp:
@@ -115,7 +116,6 @@ def config_hosts(vc, services_str, ntp=None, licensekey=None):
         if licensekey:
             host.add_license(license_key=licensekey)
         for service in services:
-            service = service.strip()
             if service == 'ssh':
                 host.enable_ssh()
                 continue
@@ -123,6 +123,8 @@ def config_hosts(vc, services_str, ntp=None, licensekey=None):
                 # Config default vMotion network
                 host.config_vmotion()
                 continue
+        for rule in rules:
+            host.config_firewall(rule)
 
 
 def create_dvs(vc, dc, dvs_name, nic_index=1, target_hosts_str=None,

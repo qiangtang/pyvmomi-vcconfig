@@ -42,7 +42,7 @@ def init_ssl():
 
 def get_items(items_str):
     if '' == items_str:
-        return None
+        return []
     items_list = items_str.strip().split(',')
     return [item.strip() for item in items_list]
 
