@@ -27,7 +27,10 @@ def main():
     vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
     vc_user = cf.get(utils.VC_SECTION, 'vc_user')
     vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    license_key = cf.get(utils.VC_SECTION, 'license')
     vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
+    if '' != license_key:
+        vc.add_license(license_key)
 
     # Add DC
     dc_name = cf.get(utils.DC_SECTION, 'dc')

@@ -103,6 +103,14 @@ class VirtualCenter(ManagedObject):
                                      [permission])
 
     @requires_connection
+    def add_license(self, license_key):
+        rc = self.si.RetrieveContent()
+        license_asg_manager = rc.licenseManager.licenseAssignmentManager
+        print 'Assign license to vc {}.'.format(self.host)
+        license_asg_manager.UpdateAssignedLicense(
+            entity=rc.about.instanceUuid, licenseKey=license_key)
+
+    @requires_connection
     def create_datacenter(self, name):
         """Creates a datacenter in the root folder.
 
