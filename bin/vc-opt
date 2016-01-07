@@ -3,6 +3,7 @@
 import argparse
 from common.parser import parsers_common
 from common.parser import parsers_host
+from common.parser import parsers_net
 from common.parser import parsers_vm
 from common import utils
 
@@ -42,6 +43,9 @@ def main():
     parsers_vm.unregister_parser(subparsers)
     parsers_vm.clone_parser(subparsers)
     parsers_vm.path_parser(subparsers)
+
+    # Net action site
+    parsers_net.pg_moid_parser(subparsers)
 
     args = parser.parse_args()
     args.func(args)

@@ -305,3 +305,20 @@ def remove_dc_datastore(vc, dc_name, datastores):
         ds = dc.get_datastore_by_name(ds_name)
         for host in ds.get_hosts():
             host.remove_datastore(ds)
+
+
+def get_pg_id(vc, dc_name, vds_name, pg_name):
+    dc = vc.get_datacenter_by_name(dc_name)
+    if dc is None:
+        print 'Data Center {} not found on VC'.format(dc_name)
+        return None
+    vds = dc.get_dvs_by_name(vds_name)
+    if vds is None:
+        print 'vDS {} not exist on data center {}'.format(vds_name, dc_name)
+        return None
+    pg = vds.get_portgroup(pg_name)
+    if pg:
+        return pg.key
+    else:
+        print 'Portgroup {} not exist on vds {}'.format(pg_name, vds_name)
+        return None
