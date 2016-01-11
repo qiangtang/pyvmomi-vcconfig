@@ -226,20 +226,31 @@ def add_nfs_to_host(vc, remote_host, remote_path, ds_name, target_hosts):
                 .format(host_name)
 
 
-def vmotion(vc, vm_name, dest_host_name, dest_datastore_name, folder=None):
-    vm = vc.get_vm_by_name(vm_name, folder)
-    dest_host = vc.get_host_by_name(dest_host_name)
-    dest_datastore = vc.get_datastore_by_name(dest_datastore_name)
-    if vm is None:
-        print 'VM {} not exist on VC.'.format(vm_name)
-        return
-    if dest_host is None:
-        print 'Host {} not exist on VC.'.format(dest_host_name)
-        return
-    if dest_datastore is None:
-        print 'Datastore {} not exist on VC.'.format(dest_datastore_name)
-        return
-    vm.migrate(dest_host, dest_datastore)
+def call_func(instance, name, args=(), kwargs=None):
+    if kwargs is None:
+        kwargs = {}
+    return getattr(instance, name)(*args, **kwargs)
+
+def vmotion(dc, vm_reg, host_name, ds_name, concurrency=10):
+    host = dc.get_host_by_name(host_name)
+    ds = dc.get_datastore_by_name(ds_name)
+    if host is None:
+        print 'Host {} not exist on DC.'.format(host_name)
+        exit(1)
+    if ds is None:
+        print 'Datastore {} not exist on DC.'.format(ds_name)
+        exit(1)
+    vms = dc.get_vms_by_regex(utils.get_items(vm_reg))
+    vm_num = len(vms)
+    import threadpool
+    size = concurrency if concurrency < vm_num else vm_num
+    pool = threadpool.ThreadPool(size)
+    reqs = [threadpool.WorkRequest(call_func, args=(vm, 'migrate', (host, ds)))
+            for vm in vms]
+    for req in reqs:
+        pool.putRequest(req)
+    pool.wait()
+    exit(0)
 
 
 def cfg_esxi_service(vc, hosts, service, action):

@@ -15,10 +15,11 @@ def _get_vc():
 # VM site operations
 def migrate(args):
     vc = _get_vc()
-    vmotion_vm = args.vmotion_vm
-    dest_host = args.dest_host
-    dest_datastore = args.dest_datastore
-    operations.vmotion(vc, vmotion_vm, dest_host, dest_datastore, args.folder)
+    dc = vc.get_datacenter_by_name(args.dc)
+    if dc is None:
+        print 'Data center {} not exist on VC'.format(args.dc)
+        exit(1)
+    operations.vmotion(dc, args.vm_reg, args.host, args.ds, args.concurrency)
 
 
 def migrate_parser(subparsers):
@@ -27,33 +28,41 @@ def migrate_parser(subparsers):
         help='Migrate vm to target datastore on target host.'
     )
     parser.add_argument(
-        '--vm',
+        '--dc',
         action='store',
         required=True,
-        help='Target vm name to be migrated.',
-        dest='vmotion_vm'
+        help='Data center name',
+        dest='dc'
+    )
+    parser.add_argument(
+        '--vm-reg',
+        action='store',
+        required=True,
+        help='Regular list of target vm name to be migrated. Separated by comma.',
+        dest='vm_reg'
     )
     parser.add_argument(
         '--host',
         action='store',
         required=True,
         help='Target host the vm to be migrated',
-        dest='dest_host'
+        dest='host'
     )
     parser.add_argument(
-        '--datastore',
+        '--ds',
         action='store',
         required=True,
         help='Target datastore the vm to be migrated',
-        dest='dest_datastore'
+        dest='ds'
     )
     parser.add_argument(
-        '--folder',
+        '--concurrency',
         action='store',
-        help='[Optional] Folder name where the vm inside. '
-             'Find from root folder by default.',
-        default=None,
-        dest='folder'
+        type=int,
+        help='[Optional] Concurrency number of migrate task '
+             '10 by default.',
+        default=10,
+        dest='concurrency'
     )
     parser.set_defaults(func=migrate)
 

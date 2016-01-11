@@ -343,6 +343,13 @@ class Datacenter(ManagedObject):
                 return cluster
         return None
 
+    def get_host_by_name(self, host_name):
+        for cluster in self.get_clusters():
+            for host in cluster.get_hosts():
+                if host.name() == host_name:
+                    return host
+        return None
+
     def get_folder_by_name(self, fd_name):
         fds = self.get_folders(True)
         for fd in fds:
@@ -415,11 +422,26 @@ class Datacenter(ManagedObject):
         vms = []
         for vm in child_entitys:
             if recursive and isinstance(vm, vim.Folder):
-                vms.extend(Folder(self.si, vm).get_vms())
+                vms.extend(Folder(self.si, vm).get_vms(recursive))
                 continue
             if isinstance(vm, vim.VirtualMachine):
                 vms.append(VM(self.si, vm))
         return vms
+
+    def get_vms_by_regex(self, regex_list, status=None):
+        all_vms = []
+        vms = self.get_vms(recursive=True)
+        for regex in regex_list:
+            for vm in vms:
+                if re.match(regex, vm.name()):
+                    all_vms.append(vm)
+        if status is not None:
+            import utils
+            if status in utils.VM_STATUS:
+                for vm in all_vms:
+                    if vm.get_state() != status:
+                        all_vms.remove(vm)
+        return all_vms
 
 
 class Cluster(ManagedObject):
@@ -936,7 +958,7 @@ class Folder(ManagedObject):
         vms = []
         for vm in child_entitys:
             if recursive and isinstance(vm, vim.Folder):
-                vms.extend(Folder(self.si, vm).get_vms())
+                vms.extend(Folder(self.si, vm).get_vms(recursive))
                 continue
             if isinstance(vm, vim.VirtualMachine):
                 vms.append(VM(self.si, vm))
