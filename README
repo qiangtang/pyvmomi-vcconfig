@@ -8,9 +8,10 @@ Tool List:
 
 Installation:
 
-    1 Need pyVmomi and openssl installed:
+    1 Packages pre-installed:
       -- pip install pyvmomi
       -- pip install openssl
+      -- pip install threadpool
 
     2 Init Tool:
       -- python setup.py install

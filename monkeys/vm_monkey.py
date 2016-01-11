@@ -1,7 +1,7 @@
 from common import utils
 import monkey
 import random
-import threading
+import threadpool
 
 
 class VMMonkey(monkey.Monkey):
@@ -13,10 +13,10 @@ class VMMonkey(monkey.Monkey):
         vm_list = self.vc.get_vms_by_regex(regulars)
         if len(vm_list) < number:
             number = len(vm_list)
-        threads = self.policy_threads(policy, vm_list, actions, number)
-        return threads
+        requests = self.policy_requests(policy, vm_list, actions, number)
+        return requests
 
-    def _get_thread(self, vm, action):
+    def _get_request(self, vm, action):
         if action == 'migrate':
             host = vm.get_host()
             dss = host.get_datastores()
@@ -29,8 +29,8 @@ class VMMonkey(monkey.Monkey):
                     break
             if vm_ds is None:
                 vm_ds = vm.get_datastores[0]
-            return threading.Thread(target=self.call_func,
-                                    args=(vm, action, (host, vm_ds,)))
+            return threadpool.WorkRequest(self.call_func,
+                                          args=(vm, action, (host, vm_ds,)))
         randstr = utils.get_randstr(5)
         func_dict = {'clone': (vm.name() + '_clone_' + randstr,),
                      'snapshot': (vm.name() + '_snap_' + randstr,),
@@ -46,19 +46,11 @@ class VMMonkey(monkey.Monkey):
                 self.restore_list[action].append(vm)
             elif action == 'clone':
                 self.restore_list[action].append(vm.name() + '_clone_' + randstr)
-        return threading.Thread(target=self.call_func,
-                                args=(vm, action, func_dict[action]))
-
-    def restore(self):
-        thread_list = self.get_restore_list()
-        for thread in thread_list:
-            thread.start()
-        for thread in thread_list:
-            thread.join()
-        self.restore_list.clear()
+        return threadpool.WorkRequest(self.call_func,
+                                      args=(vm, action, func_dict[action]))
 
     def get_restore_list(self):
-        thread_list = []
+        request_list = []
         restore_dist = {
             'clone': 'destroy',
             'poweron': 'poweroff',
@@ -71,8 +63,8 @@ class VMMonkey(monkey.Monkey):
                        for vm_name in self.restore_list[action]]
             else:
                 vms = self.restore_list[action]
-            threads = [threading.Thread(target=self.call_func,
-                                        args=(vm, restore_dist[action], ()))
-                       for vm in vms]
-            thread_list.extend(threads)
-        return thread_list
+            requests = [threadpool.WorkRequest(self.call_func,
+                                               args=(vm, restore_dist[action], ()))
+                        for vm in vms]
+            request_list.extend(requests)
+        return request_list

@@ -3,6 +3,7 @@ import argparse
 import ConfigParser
 import random
 import time
+import threadpool
 
 from common import operations
 from common import utils
@@ -32,29 +33,30 @@ def main():
 
     loop = cf.get(utils.SCH_GLOBAL, 'loop')
     loop_sleep = cf.get(utils.SCH_GLOBAL, 'loop_sleep')
-    thread_sleep = cf.get(utils.SCH_GLOBAL, 'thread_sleep')
+    concurrency = cf.get(utils.SCH_GLOBAL, 'concurrency')
 
     loop_time = 1 if '' == loop else int(loop)
     sleep_time = 0 if '' == loop_sleep else int(loop_sleep)
-    thread_sleep = 0 if '' == thread_sleep else int(thread_sleep)
+    concurrency = 10 if '' == concurrency else int(concurrency)
 
     for i in range(loop_time):
-        thread_list = []
+        request_list = []
         vm_sch = vm_monkey.VMMonkey(vc, cf)
-        thread_list.extend(vm_sch.planner())
+        request_list.extend(vm_sch.planner())
 
         host_sch = host_monkey.HostMonkey(vc, cf)
-        thread_list.extend(host_sch.planner())
-
-        random.shuffle(thread_list)
-        for thread in thread_list:
-            thread.start()
-            time.sleep(thread_sleep)
-        for thread in thread_list:
-            thread.join()
+        request_list.extend(host_sch.planner())
+        random.shuffle(request_list)
+        req_len = len(request_list)
+        if req_len < concurrency:
+            concurrency = req_len
+        pool = threadpool.ThreadPool(concurrency)
+        for req in request_list:
+            pool.putRequest(req)
+        pool.wait()
         time.sleep(sleep_time)
-        host_sch.restore()
-        vm_sch.restore()
+        host_sch.restore(concurrency)
+        vm_sch.restore(concurrency)
 
 
 if __name__ == '__main__':

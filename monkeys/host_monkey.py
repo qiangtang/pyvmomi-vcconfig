@@ -1,6 +1,6 @@
 from common import operations
 import monkey
-import threading
+import threadpool
 
 
 class HostMonkey(monkey.Monkey):
@@ -16,10 +16,10 @@ class HostMonkey(monkey.Monkey):
         host_list = [host for host in all_hosts if host.name() in hosts]
         if len(host_list) < number:
             number = len(host_list)
-        threads = self.policy_threads(policy, host_list, actions, number)
-        return threads
+        requests = self.policy_requests(policy, host_list, actions, number)
+        return requests
 
-    def _get_thread(self, host, action):
+    def _get_request(self, host, action):
         func_dict = {'maintenance': (),
                      'reboot': (),
                      'disconnect': ()}
@@ -27,29 +27,21 @@ class HostMonkey(monkey.Monkey):
             if action not in self.restore_list.keys():
                 self.restore_list[action] = []
             self.restore_list[action].append(host)
-        return threading.Thread(target=self.call_func,
-                                args=(host, action, func_dict[action]))
-
-    def restore(self):
-        thread_list = self.get_restore_list()
-        for thread in thread_list:
-            thread.start()
-        for thread in thread_list:
-            thread.join()
-        self.restore_list.clear()
+        return threadpool.WorkRequest(self.call_func,
+                                      args=(host, action, func_dict[action]))
 
     def get_restore_list(self):
-        thread_list = []
+        request_list = []
         for action in self.restore_list.keys():
             if action == 'maintenance':
                 for host in self.restore_list[action]:
-                    thread_list.append(
-                        threading.Thread(target=self.call_func,
-                                         args=(host, action, ('exit',))))
+                    request_list.append(
+                        threadpool.WorkRequest(self.call_func,
+                                               args=(host, action, ('exit',))))
                 continue
             if action == 'disconnect':
                 for host in self.restore_list[action]:
-                    thread_list.append(
-                        threading.Thread(target=self.call_func,
-                                         args=(host, 'reconnect', ())))
-        return thread_list
+                    request_list.append(
+                        threadpool.WorkRequest(self.call_func,
+                                               args=(host, 'reconnect', ())))
+        return request_list

@@ -1,5 +1,6 @@
 from common import utils
 import random
+import threadpool
 
 
 class Monkey(object):
@@ -33,7 +34,7 @@ class Monkey(object):
     def get_plan(self, policy, regulars, actions, number):
         return []
 
-    def policy_threads(self, policy, target_list, actions, number):
+    def policy_requests(self, policy, target_list, actions, number):
         len_targets = len(target_list)
         if number > len_targets:
             number = len_targets
@@ -41,14 +42,21 @@ class Monkey(object):
         random.shuffle(actions)
         if policy == 'action_base':
             len_act = len(actions)
-            return [self._get_thread(targets[i], actions[i % len_act])
+            return [self._get_request(targets[i], actions[i % len_act])
                     for i in range(len(targets))]
         else:
-            return [self._get_thread(target, random.choice(actions))
+            return [self._get_request(target, random.choice(actions))
                     for target in targets]
 
-    def _get_thread(self, target, action):
+    def _get_request(self, target, action):
         return None
 
-    def restore(self):
-        pass
+    def restore(self, poolsize=10):
+        pool = threadpool.ThreadPool(poolsize)
+        for req in self.get_restore_list():
+            pool.putRequest(req)
+        pool.wait()
+        self.restore_list.clear()
+
+    def get_restore_list(self):
+        return []
