@@ -231,6 +231,7 @@ def call_func(instance, name, args=(), kwargs=None):
         kwargs = {}
     return getattr(instance, name)(*args, **kwargs)
 
+
 def vmotion(dc, vm_reg, host_name, ds_name, concurrency=10):
     host = dc.get_host_by_name(host_name)
     ds = dc.get_datastore_by_name(ds_name)
