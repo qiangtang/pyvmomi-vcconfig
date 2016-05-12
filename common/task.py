@@ -125,7 +125,6 @@ def WaitForTask(task,
 #  Difference: WaitForTasks won't return the state of tasks. User can check
 #  tasks state directly with task.info.state
 #
-#  TODO: Did not check for question pending
 def WaitForTasks(tasks,
                  si=None,
                  raiseOnError=True,

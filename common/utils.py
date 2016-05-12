@@ -1,12 +1,14 @@
 CONFIG_FILE_PATH = '/usr/local/data/config.ini'
 SCHEDULAR_FILE_PATH = '/usr/local/data/monkey.ini'
 
-VC_SECTION = 'vc_info'
-DC_SECTION = 'dc_info'
-CLUSTER_SECTION_PREFIX = 'cluster_info'
-HOST_SECTION = 'host_info'
-DVS_SECTION_PREFIX = 'dvs_info'
-NFS_PREFIX = 'nfs_info'
+INFO_VC = 'info_vc'
+INFO_HOST = 'info_host'
+
+VC_INS_PREFIX = 'vc_'
+DC_INS_PREFIX = 'dc_'
+CLUSTER_INS_PREFIX = 'cluster_'
+DVS_INS_PREFIX = 'dvs_'
+NFS_INS_PREFIX = 'nfs_'
 
 SCH_PREFIX = 'sch_'
 SCH_GLOBAL = 'global'
@@ -27,6 +29,8 @@ DS_TYPE = ['VMFS', 'NFS', 'VSAN']
 # VM Status
 VM_STATUS = ['poweredOn', 'poweredOff', 'suspended']
 
+# Obj Type
+OBJ_TYPE = ['vapp', 'vm']
 
 def init_ssl():
     import ssl
@@ -40,10 +44,10 @@ def init_ssl():
         ssl._create_default_https_context = _create_unverified_https_context
 
 
-def get_items(items_str):
+def get_items(items_str, flag=','):
     if '' == items_str:
         return []
-    items_list = items_str.strip().split(',')
+    items_list = items_str.strip().split(flag)
     return [item.strip() for item in items_list]
 
 

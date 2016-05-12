@@ -10,20 +10,21 @@ class Monkey(object):
         self.vc = vc
         self.cf = cf
         self.restore_list = {}
+        self.item_type = item_type
+        self.item_dict = {}
 
     def planner(self):
         plan = []
         sections = self.cf.sections()
         for section in sections:
             if section.startswith(self.cf_item):
-                targets = utils.get_items(self.cf.get(section, 'targets'))
                 actions = utils.get_items(self.cf.get(section, 'actions'))
-                if targets is None or actions is None:
+                if actions is None:
                     continue
                 number_str = self.cf.get(section, 'target_number')
-                number = len(targets) if '' == number_str else int(number_str)
+                number = len(self.item_dict) if '' == number_str else int(number_str)
                 policy = self.cf.get(section, 'policy').strip().lower()
-                plan.extend(self.get_plan(policy, targets, actions, number))
+                plan.extend(self.get_plan(policy, section, actions, number))
         return plan
 
     def call_func(self, instance, name, args=(), kwargs=None):
@@ -31,8 +32,17 @@ class Monkey(object):
             kwargs = {}
         return getattr(instance, name)(*args, **kwargs)
 
-    def get_plan(self, policy, regulars, actions, number):
-        return []
+    def get_plan(self, policy, section, actions, number):
+        if section not in self.item_dict.keys():
+            return []
+        item_list = self.item_dict[section]
+        item_num = len(item_list)
+        if 0 == item_num:
+            return []
+        if item_num < number:
+            number = item_num
+        requests = self.policy_requests(policy, item_list, actions, number)
+        return requests
 
     def policy_requests(self, policy, target_list, actions, number):
         len_targets = len(target_list)
@@ -53,6 +63,9 @@ class Monkey(object):
 
     def restore(self, poolsize=10):
         pool = threadpool.ThreadPool(poolsize)
+        if len(self.get_restore_list()) == 0:
+            return
+        print 'Starting {} action restore...'.format(self.item_type)
         for req in self.get_restore_list():
             pool.putRequest(req)
         pool.wait()

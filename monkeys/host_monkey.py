@@ -1,4 +1,5 @@
 from common import operations
+from common import utils
 import monkey
 import threadpool
 
@@ -7,17 +8,19 @@ class HostMonkey(monkey.Monkey):
 
     def __init__(self, vc, cf):
         monkey.Monkey.__init__(self, vc, cf, 'host')
+        self.init_resource()
 
-    def get_plan(self, policy, host_names, actions, number):
-        hosts = []
-        for item in host_names:
-            hosts.extend(operations.get_host_list(item))
-        all_hosts = self.vc.get_hosts()
-        host_list = [host for host in all_hosts if host.name() in hosts]
-        if len(host_list) < number:
-            number = len(host_list)
-        requests = self.policy_requests(policy, host_list, actions, number)
-        return requests
+    def init_resource(self):
+        sections = self.cf.sections()
+        for section in sections:
+            if section.startswith(self.cf_item):
+                hosts = []
+                host_names = utils.get_items(self.cf.get(section, 'targets'))
+                for item in host_names:
+                    hosts.extend(operations.get_host_list(item))
+                all_hosts = self.vc.get_hosts()
+                host_list = [host for host in all_hosts if host.name() in hosts]
+                self.item_dict[section] = host_list
 
     def _get_request(self, host, action):
         func_dict = {'maintenance': (),

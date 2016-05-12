@@ -24,42 +24,66 @@ def main():
     cf.read(args.path)
     sections = cf.sections()
 
-    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
-    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
-    license_key = cf.get(utils.VC_SECTION, 'license')
-    vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
-    if '' != license_key:
-        vc.add_license(license_key)
+    vc_user = cf.get(utils.INFO_VC, 'vc_user')
+    vc_pwd = cf.get(utils.INFO_VC, 'vc_pwd')
+    license_key = cf.get(utils.INFO_VC, 'license')
+
+    ins_list = {}
+    index = 0
+    vc_item = utils.VC_INS_PREFIX + str(index)
+    while vc_item in sections:
+        vc_ip = cf.get(vc_item, 'ip')
+        vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
+        if '' != license_key:
+            vc.add_license(license_key)
+        ins_list[vc_item] = vc
+        index += 1
+        vc_item = utils.VC_INS_PREFIX + str(index)
 
     # Add DC
-    dc_name = cf.get(utils.DC_SECTION, 'dc')
-    dc = operations.get_datacenter(vc, dc_name)
+    index = 0
+    dc_item = utils.DC_INS_PREFIX + str(index)
+    while dc_item in sections:
+        vc_item = cf.get(dc_item, 'parent')
+        vc = ins_list[vc_item]
+        ins_list[dc_item] =\
+            operations.get_datacenter(vc, cf.get(dc_item, 'name'))
+        index += 1
+        dc_item = utils.DC_INS_PREFIX + str(index)
 
-    if dc:
-        # Add hosts to cluster
-        host_user = cf.get(utils.HOST_SECTION, 'user')
-        host_pwd = cf.get(utils.HOST_SECTION, 'pwd')
-        for section in sections:
-            if section.startswith(utils.CLUSTER_SECTION_PREFIX):
-                cluster_name = cf.get(section, 'name')
-                services = cf.get(section, 'services')
-                host_names = cf.get(section, 'host_add_list')
-
-                cluster = operations.create_cluster(dc, cluster_name, services)
-                operations.add_hosts_to_cluster(vc, cluster, host_user, host_pwd,
+    host_user = cf.get(utils.INFO_HOST, 'user')
+    host_pwd = cf.get(utils.INFO_HOST, 'pwd')
+    for section in sections:
+        if section.startswith(utils.CLUSTER_INS_PREFIX):
+            cluster_name = cf.get(section, 'name')
+            services = cf.get(section, 'services')
+            host_names = cf.get(section, 'host_add_list')
+            dc_item = cf.get(section, 'parent')
+            dc = ins_list[dc_item]
+            cluster = operations.create_cluster(dc, cluster_name, services)
+            vc_item = cf.get(dc_item, 'parent')
+            vc = ins_list[vc_item]
+            operations.add_hosts_to_cluster(vc, cluster, host_user, host_pwd,
                                                 host_names)
 
     # Config all hosts
-    host_ntp = cf.get(utils.HOST_SECTION, 'ntp')
-    host_licensekey = cf.get(utils.HOST_SECTION, 'license')
-    services = cf.get(utils.HOST_SECTION, 'services')
-    rules = cf.get(utils.HOST_SECTION, 'firewall')
-    operations.config_hosts(vc, services, host_ntp, host_licensekey, rules)
+    host_ntp = cf.get(utils.INFO_HOST, 'ntp')
+    host_licensekey = cf.get(utils.INFO_HOST, 'license')
+    services = cf.get(utils.INFO_HOST, 'services')
+    rules = cf.get(utils.INFO_HOST, 'firewall')
+    for section in sections:
+        if section.startswith(utils.VC_INS_PREFIX):
+            vc_ip = cf.get(section, 'ip')
+            vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
+            operations.config_hosts(vc, services, host_ntp, host_licensekey, rules)
 
     # Create Dvs with port group config
     for section in sections:
-        if section.startswith(utils.DVS_SECTION_PREFIX):
+        if section.startswith(utils.DVS_INS_PREFIX):
+            dc_item = cf.get(section, 'parent')
+            dc = ins_list[dc_item]
+            vc_item = cf.get(dc_item, 'parent')
+            vc = ins_list[vc_item]
             dvs_name = cf.get(section, 'name')
             target_hosts_str = cf.get(section, 'host_list')
             nic_index = int(cf.get(section, 'nic_item'))
@@ -69,7 +93,9 @@ def main():
 
     # Mount nfs to hosts
     for section in sections:
-        if section.startswith(utils.NFS_PREFIX):
+        if section.startswith(utils.NFS_INS_PREFIX):
+            vc_item = cf.get(section, 'parent')
+            vc = ins_list[vc_item]
             ds_name = cf.get(section, 'local_name')
             remote_host = cf.get(section, 'remote_host')
             remote_path = cf.get(section, 'remote_path')

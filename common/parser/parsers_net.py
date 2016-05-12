@@ -6,9 +6,9 @@ from common import utils
 def _get_vc():
     cf = ConfigParser.ConfigParser()
     cf.read(utils.CONFIG_FILE_PATH)
-    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
-    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    vc_ip = cf.get(utils.INFO_VC, 'opt_vc')
+    vc_user = cf.get(utils.INFO_VC, 'vc_user')
+    vc_pwd = cf.get(utils.INFO_VC, 'vc_pwd')
     return operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
 

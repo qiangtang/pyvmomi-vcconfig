@@ -6,9 +6,9 @@ from common import utils
 def _get_vc():
     cf = ConfigParser.ConfigParser()
     cf.read(utils.CONFIG_FILE_PATH)
-    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
-    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    vc_ip = cf.get(utils.INFO_VC, 'opt_vc')
+    vc_user = cf.get(utils.INFO_VC, 'vc_user')
+    vc_pwd = cf.get(utils.INFO_VC, 'vc_pwd')
     return operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
 
@@ -280,3 +280,27 @@ def remove_datastore_parser(subparsers):
         dest='dss'
     )
     parser.set_defaults(func=remove_datastore)
+
+
+def shutdown_host(args):
+    vc = _get_vc()
+    host = vc.get_host_by_name(args.host)
+    if host:
+        host.shutdown()
+    else:
+        print 'Host {} not existing on VC'.format(args.host)
+
+
+def shutdown_host_parser(subparsers):
+    parser = subparsers.add_parser(
+        'host-shutdown',
+        help='Shut down the target host.'
+    )
+    parser.add_argument(
+        '--host',
+        action='store',
+        required=True,
+        help='Target host name',
+        dest='host'
+    )
+    parser.set_defaults(func=shutdown_host)

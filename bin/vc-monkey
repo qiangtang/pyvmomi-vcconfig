@@ -18,7 +18,7 @@ def main():
         '-p',
         '--path',
         action='store',
-        help='Path of monkey config file. Def Path {}'.format(utils.SCHEDULAR_FILE_PATH),
+        help='Path of monkey config file. Default {}'.format(utils.SCHEDULAR_FILE_PATH),
         dest='path',
         default=utils.SCHEDULAR_FILE_PATH,
     )
@@ -26,9 +26,9 @@ def main():
 
     cf = ConfigParser.ConfigParser()
     cf.read(args.path)
-    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
-    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    vc_ip = cf.get(utils.INFO_VC, 'opt_vc')
+    vc_user = cf.get(utils.INFO_VC, 'vc_user')
+    vc_pwd = cf.get(utils.INFO_VC, 'vc_pwd')
     vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
     loop = cf.get(utils.SCH_GLOBAL, 'loop')
@@ -39,13 +39,18 @@ def main():
     sleep_time = 0 if '' == loop_sleep else int(loop_sleep)
     concurrency = 10 if '' == concurrency else int(concurrency)
 
+    print 'Starting init resources...'
+    vm_sch = vm_monkey.VMMonkey(vc, cf)
+    host_sch = host_monkey.HostMonkey(vc, cf)
+
     for i in range(loop_time):
         request_list = []
-        vm_sch = vm_monkey.VMMonkey(vc, cf)
         request_list.extend(vm_sch.planner())
-
-        host_sch = host_monkey.HostMonkey(vc, cf)
         request_list.extend(host_sch.planner())
+        if len(request_list) == 0:
+            print 'No target items found.'
+            continue
+        print 'Round {} starting...'.format(i+1)
         random.shuffle(request_list)
         req_len = len(request_list)
         if req_len < concurrency:
@@ -54,6 +59,7 @@ def main():
         for req in request_list:
             pool.putRequest(req)
         pool.wait()
+        print 'Sleeping for {} seconds...'.format(sleep_time)
         time.sleep(sleep_time)
         host_sch.restore(concurrency)
         vm_sch.restore(concurrency)

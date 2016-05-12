@@ -136,6 +136,7 @@ class VirtualCenter(ManagedObject):
         for dc in invtvw.view:
             if dc.name == name:
                 return Datacenter(self.si, dc)
+        print 'Datacenter {} not exist on VC'.format(name)
         return None
 
     @requires_connection
@@ -155,6 +156,7 @@ class VirtualCenter(ManagedObject):
                 if folder_name and vm.parent.name != folder_name:
                     continue
                 return VM(self.si, vm)
+        print 'VM {} not exist on VC'.format(name)
         return None
 
     @requires_connection
@@ -167,6 +169,7 @@ class VirtualCenter(ManagedObject):
         for ds in invtvw.view:
             if ds.name == name:
                 return DataStore(self.si, ds)
+        print 'Datastore {} not exist on VC'.format(name)
         return None
 
     @requires_connection
@@ -179,6 +182,7 @@ class VirtualCenter(ManagedObject):
         for host in invtvw.view:
             if host.name == name:
                 return Host(self.si, host)
+        print 'Host {} not exist on VC'.format(name)
         return None
 
     @requires_connection
@@ -191,6 +195,7 @@ class VirtualCenter(ManagedObject):
         for vapp in invtvw.view:
             if name in vapp.name:
                 return Vapp(self.si, vapp)
+        print 'vApp {} not exist on VC'.format(name)
         return None
 
     @requires_connection
@@ -203,6 +208,7 @@ class VirtualCenter(ManagedObject):
         for rp in invtvw.view:
             if rp.summary.name == name:
                 return ResourcePool(self.si, rp)
+        print 'ResourcePool {} not exist on VC'.format(name)
         return None
 
     @requires_connection
@@ -292,6 +298,20 @@ class VirtualCenter(ManagedObject):
         return all_folders
 
     @requires_connection
+    def get_vapps_by_regex(self, regex_list):
+        all_vapps = []
+        vmgr = self.si.RetrieveContent().viewManager
+        invtvw = vmgr.CreateContainerView(
+            container=self.get_root_folder(self.si),
+            type=[vim.VirtualApp],
+            recursive=True)
+        for regex in regex_list:
+            for vapp in invtvw.view:
+                if re.match(regex, vapp.name):
+                    all_vapps.append(Vapp(self.si, vapp))
+        return all_vapps
+
+    @requires_connection
     def get_datastores(self, dc_name=None, ds_type=None):
         if dc_name:
             ds_list = self.get_datacenter_by_name(dc_name).dc.datastore
@@ -341,6 +361,7 @@ class Datacenter(ManagedObject):
         for cluster in self.get_clusters():
             if cluster.name() == name:
                 return cluster
+        print 'Cluster {} not exist on DC {}'.format(name, self.name())
         return None
 
     def get_host_by_name(self, host_name):
@@ -455,6 +476,18 @@ class Cluster(ManagedObject):
     def name(self):
         return self.cluster.name
 
+    def get_resourcepools(self):
+        root_rp = self.cluster.resourcePool
+        return [ResourcePool(self.si, rp) for rp in root_rp.resourcePool]
+
+    def get_resourcepool_by_name(self, name):
+        rps = self.get_resourcepools()
+        for rp in rps:
+            if rp.name() == name:
+                return rp
+        print 'ResourcePool {} no exist on cluster {}'.format(name, self.name())
+        return None
+
     def add_host(self, hostConnectSpec):
         """Adds host to a cluster.
 
@@ -468,6 +501,35 @@ class Cluster(ManagedObject):
 
     def get_hosts(self):
         return [Host(self.si, host) for host in self.cluster.host]
+
+    def get_vm_by_name(self, vm_name):
+        vms = self.get_vms()
+        for vm in vms:
+            if vm.name() == vm_name:
+                return vm
+        return None
+
+    def get_vms_by_regex(self, regex_list, status=None):
+        all_vms = []
+        vms = self.get_vms()
+        for regex in regex_list:
+            for vm in vms:
+                if re.match(regex, vm.name):
+                    all_vms.append(VM(self.si, vm))
+        if status is not None:
+            import utils
+            if status in utils.VM_STATUS:
+                for vm in all_vms:
+                    if vm.get_state() != status:
+                        all_vms.remove(vm)
+        return all_vms
+
+    def get_vms(self):
+        hosts = self.get_hosts()
+        vms = []
+        for host in hosts:
+            vms.extend(host.get_vms())
+        return vms
 
     def enable_drs(self, enable=True):
         spec = vim.cluster.ConfigSpec(
@@ -515,6 +577,21 @@ class Host(ManagedObject):
 
     def get_vms(self):
         return [VM(self.si, vm) for vm in self.host_system.vm]
+
+    def get_vms_by_regex(self, regex_list, status=None):
+        all_vms = []
+        vms = self.get_vms()
+        for regex in regex_list:
+            for vm in vms:
+                if re.match(regex, vm.name()):
+                    all_vms.append(vm)
+        if status is not None:
+            import utils
+            if status in utils.VM_STATUS:
+                for vm in all_vms:
+                    if vm.get_state() != status:
+                        all_vms.remove(vm)
+        return all_vms
 
     def config_vmotion(self, nic_num=0):
         if not self.host_system.capability.vmotionSupported:
@@ -685,6 +762,11 @@ class Host(ManagedObject):
                                                              reconnectspec)
         task.WaitForTask(task=reconnect_task, si=self.si)
 
+    def shutdown(self):
+        print 'Shut down host {}'.format(self.name())
+        shutdown_task = self.host_system.ShutdownHost_Task(True)
+        task.WaitForTask(task=shutdown_task, si=self.si)
+
 
 class VM(ManagedObject):
 
@@ -694,7 +776,6 @@ class VM(ManagedObject):
         self.si = si
         self.vm = vm
 
-    # TODO(a): refactor ManagedObject class, override __getattr__
     # to retrive properties of managed object (dc, cluster, vm, ...)
     def ip(self):
         return self.vm.summary.guest.ipAddress
@@ -743,6 +824,9 @@ class VM(ManagedObject):
 
     def name(self):
         return self.vm.name
+
+    def rename(self, new_name):
+        self.vm.Rename(new_name)
 
     def get_state(self):
         state = self.vm.runtime.powerState
@@ -857,6 +941,19 @@ class VM(ManagedObject):
             size += disk.committed + disk.uncommitted
         return size / 1024 / 1024 / 1024
 
+    def search_file(self, file_name):
+        dss = self.get_datastores()
+        for ds in dss:
+            if ds.search_file(self.name(), file_name):
+                return True
+        print 'Failed to find file {}'.format(file_name)
+        return False
+
+    def delete_file(self, file_name):
+        dss = self.get_datastores()
+        for ds in dss:
+            ds.delete_file(self.name(), file_name)
+
 
 class DataStore(ManagedObject):
     B2G = 1024*1024*1024
@@ -891,6 +988,23 @@ class DataStore(ManagedObject):
     @property
     def moid(self):
         return self.ds._moId
+
+    def search_file(self, vm_name, file_name):
+        spec = vim.host.DatastoreBrowser.SearchSpec()
+        spec.matchPattern = [file_name]
+        browser = self.ds.browser
+        search_task = browser.SearchDatastoreSubFolders_Task(
+            '[{}] {}/'.format(self.name(), vm_name), spec)
+        task.WaitForTask(task=search_task, si=self.si, raiseOnError=False)
+        file_list = search_task.info.result[0].file
+        return False if len(file_list) == 0 else True
+
+    def delete_file(self, vm_name, file_name):
+        if self.search_file(vm_name, file_name):
+            browser = self.ds.browser
+            file_path = '[{}] {}/{}'.format(self.name(), vm_name, file_name)
+            print 'Delete target file on path {}'.format(file_path)
+            browser.DeleteFile(file_path)
 
 
 class DistributedVirtualSwitch(ManagedObject):
@@ -936,6 +1050,7 @@ class Network(ManagedObject):
 
     def destroy(self):
         destroy_task = self.net.Destroy()
+        print 'Delete network {}'.format(self.name())
         task.WaitForTask(task=destroy_task, si=self.si)
 
 
@@ -951,6 +1066,7 @@ class Folder(ManagedObject):
 
     def destroy(self):
         destroy_task = self.folder.Destroy()
+        print 'Delete folder {}'.format(self.name())
         task.WaitForTask(task=destroy_task, si=self.si)
 
     def get_vms(self, recursive=False):
@@ -992,6 +1108,21 @@ class ResourcePool(ManagedObject):
     def get_vms(self):
         return [VM(self.si, vm) for vm in self.rp.vm]
 
+    def get_vms_by_regex(self, regex_list, status=None):
+        all_vms = []
+        vms = self.get_vms()
+        for regex in regex_list:
+            for vm in vms:
+                if re.match(regex, vm.name()):
+                    all_vms.append(vm)
+        if status is not None:
+            import utils
+            if status in utils.VM_STATUS:
+                for vm in all_vms:
+                    if vm.get_state() != status:
+                        all_vms.remove(vm)
+        return all_vms
+
 
 class Vapp(ManagedObject):
     def __init__(self, si, vapp):
@@ -1000,11 +1131,19 @@ class Vapp(ManagedObject):
         self.si = si
         self.vapp = vapp
 
+    def name(self):
+        return self.vapp.name
+
+    def rename(self, new_name):
+        self.vapp.Rename(new_name)
+
     def poweroff(self):
+        print 'Power off vApp {}'.format(self.name())
         poweroff_task = self.vapp.PowerOff(force=True)
         task.WaitForTask(task=poweroff_task, si=self.si)
 
     def destroy(self):
+        print 'Destroy vApp {}'.format(self.name())
         destroy_task = self.vapp.Destroy()
         task.WaitForTask(task=destroy_task, si=self.si)
 
@@ -1013,5 +1152,6 @@ class Vapp(ManagedObject):
         return state
 
     def poweron(self):
+        print 'Power on vApp {}'.format(self.name())
         poweron_task = self.vapp.PowerOn()
         task.WaitForTask(task=poweron_task, si=self.si)

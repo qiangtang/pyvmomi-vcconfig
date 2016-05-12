@@ -6,9 +6,9 @@ from common import utils
 def _get_vc():
     cf = ConfigParser.ConfigParser()
     cf.read(utils.CONFIG_FILE_PATH)
-    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
-    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    vc_ip = cf.get(utils.INFO_VC, 'opt_vc')
+    vc_user = cf.get(utils.INFO_VC, 'vc_user')
+    vc_pwd = cf.get(utils.INFO_VC, 'vc_pwd')
     return operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
 
@@ -70,9 +70,9 @@ def assign_role_parser(subparsers):
 def init_vc(args):
     cf = ConfigParser.ConfigParser()
     cf.read(utils.CONFIG_FILE_PATH)
-    cf.set(utils.VC_SECTION, 'vc_ip', args.vc_ip)
-    cf.set(utils.VC_SECTION, 'vc_user', args.vc_user)
-    cf.set(utils.VC_SECTION, 'vc_pwd', args.vc_pwd)
+    cf.set(utils.INFO_VC, 'opt_vc', args.vc_ip)
+    cf.set(utils.INFO_VC, 'vc_user', args.vc_user)
+    cf.set(utils.INFO_VC, 'vc_pwd', args.vc_pwd)
     fh = open(utils.CONFIG_FILE_PATH, 'w')
     cf.write(fh)
     fh.close()
@@ -310,3 +310,102 @@ def remove_datastore_parser(subparsers):
         dest='dss'
     )
     parser.set_defaults(func=remove_datastore)
+
+
+def power_vapp(args):
+    vc = _get_vc()
+    regular_list = utils.get_items(args.vapp_names)
+    vapps = vc.get_vapps_by_regex(regular_list)
+    for vapp in vapps:
+        if args.action == 'on':
+            vapp.poweron()
+        else:
+            vapp.poweroff()
+
+
+def power_vapp_parser(subparsers):
+    parser = subparsers.add_parser(
+        'vapp-power',
+        help='Power on/off target vapp.'
+    )
+    parser.add_argument(
+        '--vapp',
+        action='store',
+        required=True,
+        help='Regular list of the target vapp name. Separated by comma.',
+        dest='vapp_names'
+    )
+    parser.add_argument(
+        '--action',
+        action='store',
+        required=True,
+        help='Action for power status change. on/off',
+        choices=['on', 'off'],
+        dest='action'
+    )
+    parser.set_defaults(func=power_vapp)
+
+
+def destroy_vapp(args):
+    vc = _get_vc()
+    regular_list = utils.get_items(args.vapp_names)
+    vapps = vc.get_vapps_by_regex(regular_list)
+    for vapp in vapps:
+        vapp.destroy()
+
+
+def destroy_vapp_parser(subparsers):
+    parser = subparsers.add_parser(
+        'vapp-destroy',
+        help='Destroy target vapp.'
+    )
+    parser.add_argument(
+        '--vapp',
+        action='store',
+        required=True,
+        help='Regular list of the target vapp name. Separated by comma.',
+        dest='vapp_names'
+    )
+    parser.set_defaults(func=destroy_vapp)
+
+
+def rename(args):
+    vc = _get_vc()
+    if args.type == 'vapp':
+        vapp = vc.get_vapp_by_name(args.name)
+        if vapp:
+            vapp.rename(args.new_name)
+    elif args.type == 'vm':
+        vm = vc.get_vm_by_name(args.name)
+        if vm:
+            vm.rename(args.new_name)
+
+
+def rename_parser(subparsers):
+    parser = subparsers.add_parser(
+        'rename',
+        help='Rename the target object.'
+    )
+    parser.add_argument(
+        '--type',
+        action='store',
+        required=True,
+        help='Object type of target. e.g. vapp, vm',
+        choices=utils.OBJ_TYPE,
+        dest='type'
+    )
+    parser.add_argument(
+        '--name',
+        action='store',
+        required=True,
+        help='Name of the target object',
+        dest='name'
+    )
+    parser.add_argument(
+        '--new',
+        action='store',
+        required=True,
+        help='Mew name of the target object',
+        dest='new_name'
+    )
+    parser.set_defaults(func=rename)

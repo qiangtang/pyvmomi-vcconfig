@@ -5,44 +5,39 @@ import ConfigParser
 from optparse import OptionParser
 from common import operations
 from common import utils
+import threadpool
 
 LOG = logging.getLogger(__name__)
 
 
-def clean_vms(vc, vm_keys_list):
-    # Clean up vms
+def call_func(instance, name, args=(), kwargs=None):
+    if kwargs is None:
+        kwargs = {}
+    return getattr(instance, name)(*args, **kwargs)
+
+
+def clean_vms(vc, vm_keys_list, poolsize=10):
+    pool = threadpool.ThreadPool(poolsize)
     target_vms = vc.get_vms_by_regex(vm_keys_list)
     for vm in target_vms:
-        try:
-            if vm.get_state() == "poweredOn":
-                LOG.info('PowerOff VM ' + vm.name())
-                vm.poweroff()
-            LOG.info('Delete VM ' + vm.name())
-            vm.destroy()
-        except Exception as ex:
-            LOG.info('Failed to delete VM.' + ex.message)
+        pool.putRequest(threadpool.WorkRequest(call_func, args=(vm, 'destroy')))
+    pool.wait()
 
 
-def clean_nets(vc, net_keys_list):
-    # Clean up port groups
+def clean_nets(vc, net_keys_list, poolsize=10):
+    pool = threadpool.ThreadPool(poolsize)
     target_nets = vc.get_nets_by_regex(net_keys_list)
     for net in target_nets:
-        try:
-            LOG.info('Delete network ' + net.name())
-            net.destroy()
-        except Exception as ex:
-            LOG.info('Failed to delete network.' + ex.message)
+        pool.putRequest(threadpool.WorkRequest(call_func, args=(net, 'destroy')))
+    pool.wait()
 
 
-def clean_folders(vc, folder_keys_list):
-    # Clean up folders
+def clean_folders(vc, folder_keys_list, poolsize=10):
+    pool = threadpool.ThreadPool(poolsize)
     target_folders = vc.get_folders_by_regex(folder_keys_list)
     for folder in target_folders:
-        try:
-            LOG.info('Delete folder ' + folder.name())
-            folder.destroy()
-        except Exception as ex:
-            LOG.info('Failed to delete folder.' + ex.message)
+        pool.putRequest(threadpool.WorkRequest(call_func, args=(folder, 'destroy')))
+    pool.wait()
 
 
 def main():
@@ -66,6 +61,8 @@ def main():
                       help="Regular expression for network. Separated by ,")
     parser.add_option("--fd-regx", dest="fd_regx",
                       help="Regular expression for folder. Separated by ,")
+    parser.add_option("-c", "--concurrency", dest="concurrency", type="int",
+                      default=10, help="Concurrency of action.")
 
     (options, args) = parser.parse_args()
 
@@ -82,22 +79,22 @@ def main():
     cf = ConfigParser.ConfigParser()
     cf.read(utils.CONFIG_FILE_PATH)
 
-    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
-    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    vc_ip = cf.get(utils.INFO_VC, 'opt_vc')
+    vc_user = cf.get(utils.INFO_VC, 'vc_user')
+    vc_pwd = cf.get(utils.INFO_VC, 'vc_pwd')
     vc = operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
     if clean_def_resource:
-        clean_vms(vc, vm_keys_list)
-        clean_nets(vc, net_keys_list)
-        clean_folders(vc, folder_keys_list)
+        clean_vms(vc, vm_keys_list, options.concurrency)
+        clean_nets(vc, net_keys_list, options.concurrency)
+        clean_folders(vc, folder_keys_list, options.concurrency)
     else:
         if options.vm_regx:
-            clean_vms(vc, vm_keys_list)
+            clean_vms(vc, vm_keys_list, options.concurrency)
         if options.net_regx:
-            clean_nets(vc, net_keys_list)
+            clean_nets(vc, net_keys_list, options.concurrency)
         if options.fd_regx:
-            clean_folders(vc, folder_keys_list)
+            clean_folders(vc, folder_keys_list, options.concurrency)
 
 
 if __name__ == '__main__':

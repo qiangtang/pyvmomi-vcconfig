@@ -6,9 +6,9 @@ from common import utils
 def _get_vc():
     cf = ConfigParser.ConfigParser()
     cf.read(utils.CONFIG_FILE_PATH)
-    vc_ip = cf.get(utils.VC_SECTION, 'vc_ip')
-    vc_user = cf.get(utils.VC_SECTION, 'vc_user')
-    vc_pwd = cf.get(utils.VC_SECTION, 'vc_pwd')
+    vc_ip = cf.get(utils.INFO_VC, 'opt_vc')
+    vc_user = cf.get(utils.INFO_VC, 'vc_user')
+    vc_pwd = cf.get(utils.INFO_VC, 'vc_pwd')
     return operations.get_vcenter(vc_ip, vc_user, vc_pwd)
 
 
@@ -69,23 +69,23 @@ def migrate_parser(subparsers):
 
 def power(args):
     vc = _get_vc()
-    vm_names = args.vm_name.strip().split(',')
-    for vm_name in vm_names:
-        vm = vc.get_vm_by_name(vm_name.strip(), args.folder)
+    vm_names = utils.get_items(args.vm_names)
+    vms = vc.get_vms_by_regex(vm_names, args.folder)
+    for vm in vms:
         vm.power(args.action)
 
 
 def power_parser(subparsers):
     parser = subparsers.add_parser(
         'vm-power',
-        help='Power on/off target vm.'
+        help='Power on/off target vms defined by regular or name.'
     )
     parser.add_argument(
         '--vm',
         action='store',
         required=True,
-        help='Target vm name list. Separated by comma.',
-        dest='vm_name'
+        help='Regular or name list of target vms. Separated by comma.',
+        dest='vm_names'
     )
     parser.add_argument(
         '--action',
@@ -211,10 +211,35 @@ def snapshot_parser(subparsers):
 
 def destroy(args):
     vc = _get_vc()
-    vm_names = args.vm_name.strip().split(',')
-    for vm_name in vm_names:
-        print 'Delete vm ' + vm_name
-        vm = vc.get_vm_by_name(vm_name.strip(), args.folder)
+    vm_lists = utils.get_items(args.vm_names)
+    vms = []
+    if args.path is None:
+        vms = vc.get_vms_by_regex(vm_lists)
+    else:
+        items = utils.get_items(args.path, '/')
+        len_path = len(items)
+        dc = vc.get_datacenter_by_name(items[0])
+        if dc is None:
+            exit(1)
+        if len_path == 1:
+            vms = dc.get_vms_by_regex(vm_lists)
+        elif len_path == 2:
+            cluster = dc.get_cluster_by_name(items[1])
+            if cluster is None:
+                exit(1)
+            hosts = cluster.get_hosts()
+            for host in hosts:
+                vms.extend(host.get_vms_by_regex(vm_lists))
+        elif len_path == 3:
+            cluster = dc.get_cluster_by_name(items[1])
+            if cluster is None:
+                exit(1)
+            rp = cluster.get_resourcepool_by_name(items[2])
+            if rp is None:
+                exit(1)
+            vms.extend(rp.get_vms_by_regex(vm_lists))
+    for vm in vms:
+        print 'Delete vm ' + vm.name()
         vm.destroy()
 
 
@@ -227,16 +252,16 @@ def destroy_parser(subparsers):
         '--vm',
         action='store',
         required=True,
-        help='Target vm name list. Separated by comma.',
-        dest='vm_name'
+        help='Target vm name/regular list. Separated by comma.',
+        dest='vm_names'
     )
     parser.add_argument(
-        '--folder',
+        '--path',
         action='store',
-        help='[Optional] Folder name where the vm inside. '
-             'Find from root folder by default.',
+        help='[Optional] Resource path where the vm inside. '
+             'DataCenter/Cluster/ResourcePool.',
         default=None,
-        dest='folder'
+        dest='path'
     )
     parser.set_defaults(func=destroy)
 
@@ -309,6 +334,61 @@ def clone_parser(subparsers):
         dest='src_folder'
     )
     parser.set_defaults(func=clone)
+
+
+def delete_file(args):
+    vc = _get_vc()
+    vm_name = args.vm_name.strip()
+    vm = None
+    if args.vm_path is not None:
+        items = utils.get_items(args.vm_path, '/')
+        dc = vc.get_datacenter_by_name(items[0])
+        if dc:
+            cluster = dc.get_cluster_by_name(items[1])
+            if cluster:
+                vm = cluster.get_vm_by_name(vm_name)
+        if vm is None:
+            print 'VM {} not exist under the path {}'.format(vm_name, args.vm_path)
+            exit(1)
+    else:
+        vm = vc.get_vm_by_name(vm_name)
+    if vm:
+        if vm.search_file(args.file_name):
+            vm.delete_file(args.file_name)
+        exit(0)
+    else:
+        print 'File {} not exist on VM {}'.format(args.file_name, vm_name)
+        exit(1)
+
+
+def delete_file_parser(subparsers):
+    parser = subparsers.add_parser(
+        'vm-del-file',
+        help='Delete the target file of the given VM'
+    )
+    parser.add_argument(
+        '--vm',
+        action='store',
+        required=True,
+        help='Name of target VM.',
+        dest='vm_name'
+    )
+    parser.add_argument(
+        '--file',
+        action='store',
+        required=True,
+        help='Name of target file to be deleted.',
+        dest='file_name'
+    )
+    parser.add_argument(
+        '--vm-path',
+        action='store',
+        help='[Optional] VM path as DataCenter/Cluster on VC. '
+             'Find from VC global by default.',
+        default=None,
+        dest='vm_path'
+    )
+    parser.set_defaults(func=delete_file)
 
 
 def path(args):
